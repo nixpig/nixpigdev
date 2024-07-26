@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -12,13 +10,18 @@ type nav struct {
 	model list.Model
 }
 
-func newNav(items []list.Item) *nav {
+func newNav(pages []page) *nav {
 	navStyle := lipgloss.NewStyle().
 		MarginTop(1).
 		PaddingRight(1)
 
+	var listItems = make([]list.Item, len(pages))
+	for i, page := range pages {
+		listItems[i] = page
+	}
+
 	initialModel := list.New(
-		items,
+		listItems,
 		list.NewDefaultDelegate(),
 		0, 0,
 	)
@@ -37,21 +40,4 @@ func newNav(items []list.Item) *nav {
 
 func (n *nav) view() string {
 	return n.style.Render(n.model.View())
-}
-
-type item struct {
-	title string
-	desc  string
-}
-
-func (i item) Title() string {
-	return i.title
-}
-
-func (i item) Description() string {
-	return i.desc
-}
-
-func (i item) FilterValue() string {
-	return fmt.Sprintf("%s %s", i.title, i.desc)
 }

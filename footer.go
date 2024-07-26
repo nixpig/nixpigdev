@@ -11,7 +11,7 @@ type footer struct {
 	helpKeyMap help.KeyMap
 }
 
-func newFooter(helpKeyMap help.KeyMap) footer {
+func newFooter(helpKeyMap help.KeyMap) *footer {
 	footerStyle := lipgloss.
 		NewStyle().
 		AlignHorizontal(lipgloss.Center).
@@ -23,13 +23,13 @@ func newFooter(helpKeyMap help.KeyMap) footer {
 	initialModel.Styles.ShortKey = lipgloss.NewStyle().Bold(true)
 	initialModel.Styles.ShortDesc = lipgloss.NewStyle().Faint(true)
 
-	return footer{
+	return &footer{
 		style:      footerStyle,
 		model:      initialModel,
 		helpKeyMap: helpKeyMap,
 	}
 }
 
-func (f footer) view() string {
+func (f *footer) view() string {
 	return f.style.Render(f.model.View(f.helpKeyMap))
 }

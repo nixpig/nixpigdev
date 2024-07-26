@@ -6,36 +6,16 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
-
-var (
-	background      = lipgloss.Color("#11111b")
-	backgroundAlt   = lipgloss.Color("#181825")
-	backgroundTrans = lipgloss.Color("#aa181825")
-	foreground      = lipgloss.Color("#cdd6f4")
-	primary         = lipgloss.Color("#a6e3a1")
-	secondary       = lipgloss.Color("#eba0ac")
-	alert           = lipgloss.Color("#f38ba8")
-	active          = lipgloss.Color("#cdd6f4")
-	disabled        = lipgloss.Color("#a6adc8")
-	inactive        = lipgloss.Color("#a6adc8")
-	faded           = lipgloss.Color("#a6adc8")
-)
-
-type page struct {
-	title string
-	key   string
-}
 
 type model struct {
 	ready      bool
 	activePage int
 	nav        *nav
 	content    *content
-	footer     footer
+	footer     *footer
 }
 
 func (m model) Init() tea.Cmd {
@@ -57,29 +37,32 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, inputKeys.next):
 			m.nav.model.CursorDown()
+			if m.nav.model.Index() != m.activePage {
+				m.content.update(m.nav.model.Index())
+				m.activePage = m.nav.model.Index()
+			}
 
 		case key.Matches(msg, inputKeys.prev):
 			m.nav.model.CursorUp()
-
+			if m.nav.model.Index() != m.activePage {
+				m.content.update(m.nav.model.Index())
+				m.activePage = m.nav.model.Index()
+			}
 		}
 
 	case tea.WindowSizeMsg:
 		// layout on window size
-		if !m.ready {
-			termWidth := msg.Width
-			termHeight := msg.Height
+		m.ready = false
 
-			footerHeight := m.footer.style.GetHeight()
-			navWidth := m.nav.style.GetWidth()
+		viewportHeight := msg.Height - m.footer.style.GetHeight() - 2
 
-			m.nav.model.SetHeight(termHeight - footerHeight - 2)
-			m.nav.model.SetWidth(25)
-			m.content.model.Width = termWidth - navWidth
-			m.content.model.Height = termHeight - footerHeight - 2
+		m.nav.model.SetHeight(viewportHeight)
+		m.nav.model.SetWidth(25)
 
-			m.ready = true
-		}
+		m.content.model.Width = msg.Width - m.nav.model.Width()
+		m.content.model.Height = viewportHeight
 
+		m.ready = true
 	}
 
 	return m, nil
@@ -95,7 +78,6 @@ func (m model) View() string {
 	v.WriteString(
 		lipgloss.JoinVertical(
 			lipgloss.Left,
-
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
 				m.nav.view(),
@@ -109,19 +91,41 @@ func (m model) View() string {
 }
 
 func main() {
-	m := model{
-		activePage: 0,
-		content:    newContent([]string{"pages/home.md"}),
-		nav: newNav([]list.Item{
-			item{title: "🏡 Home", desc: "The home page"},
-			item{title: "✨ About", desc: "The about section"},
-			item{title: "🏗️ Projects", desc: "Open source stuff"},
-			item{title: "📬️ Contact", desc: "Socials and stuff"},
-		}),
-		footer: newFooter(inputKeys),
+	pages := []page{
+		{
+			title:    "🏡 Home",
+			desc:     "The home page",
+			filepath: "pages/home.md",
+		},
+		{
+			title:    "✨ About",
+			desc:     "The about section",
+			filepath: "pages/about.md",
+		},
+		{
+			title:    "🏗️ Projects",
+			desc:     "Open source stuff",
+			filepath: "pages/projects.md",
+		},
+		{
+			title:    "📬️ Contact",
+			desc:     "Socials and stuff",
+			filepath: "pages/contact.md",
+		},
 	}
 
-	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
+	m := model{
+		activePage: 0,
+		content:    newContent(pages),
+		nav:        newNav(pages),
+		footer:     newFooter(inputKeys),
+	}
+
+	p := tea.NewProgram(
+		m,
+		tea.WithAltScreen(),
+		tea.WithMouseCellMotion(),
+	)
 
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Failed to start: %s\n", err)
