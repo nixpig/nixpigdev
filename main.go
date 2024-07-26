@@ -3,12 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
-	"slices"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/viewport"
+	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -24,13 +23,6 @@ var (
 	disabled        = lipgloss.Color("#a6adc8")
 	inactive        = lipgloss.Color("#a6adc8")
 	faded           = lipgloss.Color("#a6adc8")
-
-	inactiveTabStyle = lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Padding(0, 2, 0, 1).Foreground(inactive).BorderForeground(inactive)
-	activeTabStyle   = inactiveTabStyle.Bold(true).Foreground(active)
-	contentStyle     = lipgloss.NewStyle().Padding(0, 1, 1, 0).Border(lipgloss.NormalBorder()).BorderForeground(inactive)
-	footerStyle      = lipgloss.NewStyle().Foreground(faded).AlignHorizontal(lipgloss.Center)
-
-	containerStyle = lipgloss.NewStyle().Align(lipgloss.Center).Padding(2)
 )
 
 type page struct {
@@ -40,9 +32,10 @@ type page struct {
 
 type model struct {
 	ready      bool
-	pages      []page
 	activePage int
-	viewport   viewport.Model
+	nav        *nav
+	content    *content
+	footer     footer
 }
 
 func (m model) Init() tea.Cmd {
@@ -50,97 +43,46 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var (
-		cmd  tea.Cmd
-		cmds []tea.Cmd
-	)
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q", "esc":
+		switch {
+		case key.Matches(msg, inputKeys.quit):
 			return m, tea.Quit
 
-		case "j", "down":
-			m.viewport.LineDown(1)
+		case key.Matches(msg, inputKeys.down):
+			m.content.model.LineDown(1)
 
-		case "k", "up":
-			m.viewport.LineUp(1)
+		case key.Matches(msg, inputKeys.up):
+			m.content.model.LineUp(1)
 
-		default:
-			selection := slices.IndexFunc(m.pages, func(p page) bool {
-				return p.key == msg.String()
-			})
+		case key.Matches(msg, inputKeys.next):
+			m.nav.model.CursorDown()
 
-			if selection != -1 {
-				m.activePage = selection
-			}
+		case key.Matches(msg, inputKeys.prev):
+			m.nav.model.CursorUp()
 
-			content, err := os.ReadFile(fmt.Sprintf("pages/%s.md", m.pages[m.activePage].title))
-			if err != nil {
-				m.viewport.SetContent(fmt.Sprintf("Error loading content: %s", err))
-			} else {
-				md, err := glamour.Render(string(content), "dracula")
-				if err != nil {
-					m.viewport.SetContent(fmt.Sprintf("Error rendering markdown: %s", err))
-				}
-				m.viewport.SetContent(md)
-			}
-
-			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
-		tabsHeight := lipgloss.Height(m.tabsView())
-		footerHeight := lipgloss.Height(m.footerView())
-		verticalMarginHeight := tabsHeight + footerHeight
-
+		// layout on window size
 		if !m.ready {
-			// -2 for the line breaks between sections
-			m.viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
-			m.viewport.YPosition = tabsHeight + 3
-			content, err := os.ReadFile(fmt.Sprintf("pages/%s.md", m.pages[m.activePage].title))
-			if err != nil {
-				m.viewport.SetContent(fmt.Sprintf("Error loading content: %s", err))
-			} else {
-				md, err := glamour.Render(string(content), "dracula")
-				if err != nil {
-					m.viewport.SetContent(fmt.Sprintf("Error rendering markdown: %s", err))
-				}
-				m.viewport.SetContent(md)
-			}
+			termWidth := msg.Width
+			termHeight := msg.Height
+
+			footerHeight := m.footer.style.GetHeight()
+			navWidth := m.nav.style.GetWidth()
+
+			m.nav.model.SetHeight(termHeight - footerHeight - 2)
+			m.nav.model.SetWidth(25)
+			m.content.model.Width = termWidth - navWidth
+			m.content.model.Height = termHeight - footerHeight - 2
+
 			m.ready = true
-		} else {
-			m.viewport.Width = msg.Width
-			m.viewport.Height = msg.Height - verticalMarginHeight
 		}
+
 	}
 
-	m.viewport, cmd = m.viewport.Update(msg)
-	cmds = append(cmds, cmd)
-
-	return m, tea.Batch(cmds...)
-}
-
-func (m model) tabsView() string {
-	renderedTabs := make([]string, len(m.pages))
-
-	for i, page := range m.pages {
-		tabContent := fmt.Sprintf("(%s) %s", page.key, page.title)
-		if i == m.activePage {
-			renderedTabs[i] = activeTabStyle.Render(tabContent)
-		} else {
-			renderedTabs[i] = inactiveTabStyle.Render(tabContent)
-		}
-	}
-
-	return lipgloss.JoinHorizontal(lipgloss.Top, renderedTabs...)
-}
-
-func (m model) footerView() string {
-	helpMsg := "Press ↑↓ or j/k to scroll."
-	quitMsg := "Press 'q' or 'esc' to quit."
-	return footerStyle.Render(fmt.Sprintf("%s %s", helpMsg, quitMsg))
+	return m, nil
 }
 
 func (m model) View() string {
@@ -150,39 +92,33 @@ func (m model) View() string {
 
 	v := strings.Builder{}
 
-	v.WriteString(m.tabsView())
-	v.WriteString("\n")
-	v.WriteString(m.viewport.View())
-	v.WriteString("\n")
-	v.WriteString(m.footerView())
+	v.WriteString(
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+
+			lipgloss.JoinHorizontal(
+				lipgloss.Top,
+				m.nav.view(),
+				m.content.view(),
+			),
+			m.footer.view(),
+		),
+	)
 
 	return v.String()
 }
 
 func main() {
-	pages := []page{
-		{
-			key:   "h",
-			title: "home",
-		},
-		{
-
-			key:   "a",
-			title: "about",
-		},
-		{
-			key:   "p",
-			title: "projects",
-		},
-		{
-			key:   "c",
-			title: "contact",
-		},
-	}
-
 	m := model{
 		activePage: 0,
-		pages:      pages,
+		content:    newContent([]string{"pages/home.md"}),
+		nav: newNav([]list.Item{
+			item{title: "🏡 Home", desc: "The home page"},
+			item{title: "✨ About", desc: "The about section"},
+			item{title: "🏗️ Projects", desc: "Open source stuff"},
+			item{title: "📬️ Contact", desc: "Socials and stuff"},
+		}),
+		footer: newFooter(inputKeys),
 	}
 
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
