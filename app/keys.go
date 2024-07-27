@@ -31,11 +31,11 @@ var InputKeys = keys{
 	),
 	up: key.NewBinding(
 		key.WithKeys("k", "up"),
-		key.WithHelp("↑/k", "up"),
+		key.WithHelp("⬆/k", "up"),
 	),
 	down: key.NewBinding(
 		key.WithKeys("j", "down"),
-		key.WithHelp("↓/j", "down"),
+		key.WithHelp("⬇/j", "down"),
 	),
 	next: key.NewBinding(
 		key.WithKeys("tab"),
