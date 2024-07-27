@@ -23,7 +23,7 @@ func (s *SSHClient) Close() error {
 	return nil
 }
 
-func (s *SSHClient) Run(cmd string, out io.Writer) (int, error) {
+func (s *SSHClient) Run(in io.Reader, out io.Writer, errOut io.Writer) (int, error) {
 	session, err := s.client.NewSession()
 	if err != nil {
 		return 0, fmt.Errorf("failed to start ssh session: %w", err)
@@ -36,9 +36,9 @@ func (s *SSHClient) Run(cmd string, out io.Writer) (int, error) {
 		ssh.TTY_OP_OSPEED: 14400,
 	}
 
-	session.Stdout = os.Stdout
-	session.Stderr = os.Stderr
-	session.Stdin = os.Stdin
+	session.Stdin = in
+	session.Stdout = out
+	session.Stderr = errOut
 
 	w, h, err := term.GetSize(0)
 	if err != nil {
@@ -65,23 +65,10 @@ func (s *SSHClient) Run(cmd string, out io.Writer) (int, error) {
 		return 0, fmt.Errorf("failed to wait and exit: %w", err)
 	}
 
-	// output, err := session.CombinedOutput(cmd)
-	// if err != nil {
-	// 	return 0, fmt.Errorf("failed to get combined output: %w", err)
-	// }
-	//
-	// fmt.Println("output: ", output)
-
-	// p, err := out.Write(output)
-	// if err != nil {
-	// 	return p, fmt.Errorf("failed to write to out: %w", err)
-	// }
-
 	return 0, nil
 }
 
 func main() {
-
 	sshConfig := ssh.ClientConfig{
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
@@ -96,7 +83,13 @@ func main() {
 
 	sshClient := &SSHClient{conn}
 
-	if _, err := sshClient.Run("", os.Stdout); err != nil {
+	file, err := os.Create("tmp.txt")
+	if err != nil {
+		fmt.Printf("failed to open file: %s\n", err)
+		os.Exit(1)
+	}
+
+	if _, err := sshClient.Run(os.Stdin, file, os.Stderr); err != nil {
 		fmt.Printf("failed to run command: %s\n", err)
 		os.Exit(1)
 	}
