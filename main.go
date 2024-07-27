@@ -16,6 +16,7 @@ import (
 	"github.com/charmbracelet/wish/activeterm"
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/nixpig/nixpigdev/app"
+	"github.com/nixpig/nixpigdev/logging"
 	"github.com/rs/zerolog"
 )
 
@@ -24,31 +25,71 @@ const (
 	port     = "23234"
 )
 
-var logger = zerolog.
-	New(os.Stdout).
-	Output(zerolog.ConsoleWriter{
-		Out:        os.Stdout,
-		TimeFormat: "2006-01-02T15:04:05.999Z07:00",
-	}).With().Timestamp().Logger()
+// TODO: recover from panics
+// TODO: rate limiting
+
+var pages = []app.Page{
+	{
+		PageTitle: "🏡 Home",
+		Desc:      "The home page",
+		Filepath:  "pages/home.md",
+	},
+	{
+		PageTitle: "🏗️ Projects",
+		Desc:      "Open source stuff",
+		Filepath:  "pages/projects.md",
+	},
+	{
+		PageTitle: "💻️ Uses",
+		Desc:      "The stuff I use",
+		Filepath:  "pages/uses.md",
+	},
+	{
+		PageTitle: "📬️ Contact",
+		Desc:      "Come say hi!",
+		Filepath:  "pages/contact.md",
+	},
+}
 
 func main() {
+	var logger = zerolog.
+		New(os.Stdout).
+		Output(zerolog.ConsoleWriter{
+			Out:        os.Stdout,
+			TimeFormat: "2006-01-02T15:04:05.999Z07:00",
+		}).With().Timestamp().Logger()
+
+	wg := &sync.WaitGroup{}
+	for i, page := range pages {
+		logger.Info().Str("page", page.Filepath).Msg("loading file")
+		wg.Add(1)
+		go func(i int, filepath string) {
+			defer wg.Done()
+			if filepath != "" {
+				content, err := os.ReadFile(filepath)
+				if err != nil {
+					logger.Error().Err(err).Str("filepath", filepath).Msg("failed to load file content")
+					return
+				}
+
+				pages[i].Content = string(content)
+			}
+		}(i, page.Filepath)
+	}
+	wg.Wait()
+
 	s, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(hostname, port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
 		wish.WithMiddleware(
-
-			// handle request
 			bubbletea.Middleware(teaHandler),
-
-			// require a PTY
 			activeterm.Middleware(),
-
-			// log connection
-			loggerMiddleware(),
+			logging.Middleware(&logger),
 		),
 	)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create server")
+		os.Exit(1)
 	}
 
 	done := make(chan os.Signal, 1)
@@ -74,48 +115,6 @@ func main() {
 }
 
 func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-	pages := []app.Page{
-		{
-			PageTitle: "🏡 Home",
-			Desc:      "The home page",
-			Filepath:  "pages/home.md",
-		},
-		{
-			PageTitle: "✨ About",
-			Desc:      "The about section",
-			Filepath:  "pages/about.md",
-		},
-		{
-			PageTitle: "🏗️ Projects",
-			Desc:      "Open source stuff",
-			Filepath:  "pages/projects.md",
-		},
-		{
-			PageTitle: "💻️ Uses",
-			Desc:      "The stuff I use",
-			Filepath:  "pages/uses.md",
-		},
-		{
-			PageTitle: "📬️ Contact",
-			Desc:      "Socials and stuff",
-			Filepath:  "pages/contact.md",
-		},
-	}
-
-	wg := &sync.WaitGroup{}
-	for i, page := range pages {
-		wg.Add(1)
-		go func(i int, filepath string) {
-			defer wg.Done()
-			if filepath != "" {
-				pages[i].Content = app.LoadFileContent(filepath)
-			}
-		}(i, page.Filepath)
-	}
-	wg.Wait()
-
-	// pty, _, _ := s.Pty()
-
 	renderer := bubbletea.MakeRenderer(s)
 
 	m := app.Model{
@@ -127,28 +126,5 @@ func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 	return m, []tea.ProgramOption{
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
-	}
-
-}
-
-func loggerMiddleware() func(next ssh.Handler) ssh.Handler {
-	return func(next ssh.Handler) ssh.Handler {
-		return func(sess ssh.Session) {
-			logger.Info().
-				Str("session", sess.Context().SessionID()).
-				Str("user", sess.User()).
-				Str("address", sess.RemoteAddr().String()).
-				Bool("publickey", sess.PublicKey() != nil).
-				Str("client", sess.Context().ClientVersion()).
-				Msg("connect")
-
-			next(sess)
-
-			// log end of connection
-			logger.Info().
-				Str("session", sess.Context().SessionID()).
-				Msg("disconnect")
-
-		}
 	}
 }

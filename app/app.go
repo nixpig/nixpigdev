@@ -1,8 +1,6 @@
 package app
 
 import (
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -91,16 +89,4 @@ func (m Model) View() string {
 	)
 
 	return v.String()
-}
-
-func Run() {
-}
-
-func LoadFileContent(filepath string) string {
-	content, err := os.ReadFile(filepath)
-	if err != nil {
-		return fmt.Sprintf("Failed to load '%s': %s", filepath, err)
-	}
-
-	return string(content)
 }

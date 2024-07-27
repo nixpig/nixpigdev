@@ -20,8 +20,8 @@ func NewFooter(renderer *lipgloss.Renderer, helpKeyMap help.KeyMap) *footer {
 	initialModel := help.New()
 
 	initialModel.ShortSeparator = " • "
-	initialModel.Styles.ShortKey = lipgloss.NewStyle().Bold(true)
-	initialModel.Styles.ShortDesc = lipgloss.NewStyle().Faint(true)
+	initialModel.Styles.ShortKey = renderer.NewStyle().Bold(true)
+	initialModel.Styles.ShortDesc = renderer.NewStyle().Faint(true)
 
 	return &footer{
 		style:      footerStyle,
