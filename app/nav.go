@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"github.com/charmbracelet/bubbles/list"
@@ -10,8 +10,8 @@ type nav struct {
 	model list.Model
 }
 
-func newNav(pages []page) *nav {
-	navStyle := lipgloss.NewStyle().
+func NewNav(renderer *lipgloss.Renderer, pages []Page) *nav {
+	navStyle := renderer.NewStyle().
 		MarginTop(1).
 		PaddingRight(1)
 

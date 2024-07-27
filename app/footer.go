@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"github.com/charmbracelet/bubbles/help"
@@ -11,8 +11,8 @@ type footer struct {
 	helpKeyMap help.KeyMap
 }
 
-func newFooter(helpKeyMap help.KeyMap) *footer {
-	footerStyle := lipgloss.
+func NewFooter(renderer *lipgloss.Renderer, helpKeyMap help.KeyMap) *footer {
+	footerStyle := renderer.
 		NewStyle().
 		AlignHorizontal(lipgloss.Center).
 		Padding(0, 1)

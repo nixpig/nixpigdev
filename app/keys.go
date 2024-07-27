@@ -1,4 +1,4 @@
-package main
+package app
 
 import "github.com/charmbracelet/bubbles/key"
 
@@ -24,7 +24,7 @@ func (k keys) FullHelp() [][]key.Binding {
 	return [][]key.Binding{k.ShortHelp()}
 }
 
-var inputKeys = keys{
+var InputKeys = keys{
 	quit: key.NewBinding(
 		key.WithKeys("q", "esc", "ctrl+c"),
 		key.WithHelp("q/esc", "quit"),
