@@ -1,6 +1,7 @@
 package app
 
 import (
+	"log"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -9,15 +10,26 @@ import (
 )
 
 type Model struct {
+	Term     string
+	Width    int
+	Height   int
+	Nav      *nav
+	Content  *content
+	Footer   *footer
+	Renderer *lipgloss.Renderer
+
 	ready      bool
 	activePage int
-	Nav        *nav
-	Content    *content
-	Footer     *footer
-	Renderer   *lipgloss.Renderer
 }
 
 func (m Model) Init() tea.Cmd {
+	f, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		log.Print("failed to open debug.log")
+	}
+	defer f.Close()
+
+	log.Print("init")
 	return nil
 }
 
@@ -37,7 +49,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, InputKeys.next):
 			m.Nav.model.CursorDown()
 			if m.Nav.model.Index() != m.activePage {
-				m.Content.model.GotoTop()
 				m.Content.update(m.Nav.model.Index())
 				m.activePage = m.Nav.model.Index()
 			}
@@ -45,7 +56,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, InputKeys.prev):
 			m.Nav.model.CursorUp()
 			if m.Nav.model.Index() != m.activePage {
-				m.Content.model.GotoTop()
 				m.Content.update(m.Nav.model.Index())
 				m.activePage = m.Nav.model.Index()
 			}

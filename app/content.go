@@ -34,6 +34,7 @@ func (c *content) view() string {
 }
 
 func (c *content) update(pageNum int) string {
+	c.model.GotoTop()
 	c.model.SetContent(c.style.Render(c.md(c.pages[pageNum].Content)))
 
 	return c.view()

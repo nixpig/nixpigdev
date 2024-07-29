@@ -6,9 +6,12 @@ import (
 	"net"
 	"os"
 
-	"github.com/charmbracelet/x/term"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
+)
+
+const (
+	terminal = "xterm-256color"
 )
 
 type SSHClient struct {
@@ -23,54 +26,70 @@ func (s *SSHClient) Close() error {
 	return nil
 }
 
-func (s *SSHClient) Run(in io.Reader, out io.Writer, errOut io.Writer) (int, error) {
+func (s *SSHClient) Connect(
+	in io.Reader,
+	out io.Writer,
+	errOut io.Writer,
+) error {
 	session, err := s.client.NewSession()
 	if err != nil {
-		return 0, fmt.Errorf("failed to start ssh session: %w", err)
+		return fmt.Errorf("failed to start ssh session: %w", err)
 	}
 
 	defer session.Close()
-	modes := ssh.TerminalModes{
-		ssh.ECHO:          1,
-		ssh.ECHOCTL:       0,
-		ssh.TTY_OP_OSPEED: 14400,
-	}
 
 	session.Stdin = in
 	session.Stdout = out
 	session.Stderr = errOut
 
-	w, h, err := term.GetSize(0)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get terminal size: %w", err)
+	var fd int
+	f, ok := session.Stdin.(*os.File)
+	if !ok {
+		fd = 0
+	} else {
+		fd = int(f.Fd())
 	}
 
-	fd := int(os.Stdin.Fd())
-
-	originalState, err := terminal.MakeRaw(fd)
+	w, h, err := term.GetSize(fd)
 	if err != nil {
-		return 0, fmt.Errorf("failed to put terminal into raw mode: %w", err)
+		return fmt.Errorf("failed to get terminal size: %w", err)
 	}
-	defer terminal.Restore(fd, originalState)
 
-	if err := session.RequestPty("xterm-256color", h, w, modes); err != nil {
-		return 0, fmt.Errorf("failed to get remote pty: %w", err)
+	originalState, err := term.MakeRaw(fd)
+	if err != nil {
+		return fmt.Errorf("failed to put terminal into raw mode: %w", err)
+	}
+
+	defer term.Restore(fd, originalState)
+
+	modes := ssh.TerminalModes{
+		ssh.ECHO:          0,
+		ssh.ECHOCTL:       0,
+		ssh.TTY_OP_OSPEED: 14400,
+	}
+
+	if err := session.RequestPty(terminal, h, w, modes); err != nil {
+		return fmt.Errorf("failed to get remote pty: %w", err)
 	}
 
 	if err := session.Shell(); err != nil {
-		return 0, fmt.Errorf("failed to get shell: %w", err)
+		return fmt.Errorf("failed to get shell: %w", err)
 	}
 
 	if err := session.Wait(); err != nil {
-		return 0, fmt.Errorf("failed to wait and exit: %w", err)
+		return fmt.Errorf("failed to wait and exit: %w", err)
 	}
 
-	return 0, nil
+	return nil
 }
 
 func main() {
 	sshConfig := ssh.ClientConfig{
-		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		HostKeyCallback: func(
+			hostname string,
+			remote net.Addr,
+			key ssh.PublicKey,
+		) error {
 			return nil
 		},
 	}
@@ -83,14 +102,19 @@ func main() {
 
 	sshClient := &SSHClient{conn}
 
-	file, err := os.Create("tmp.txt")
-	if err != nil {
-		fmt.Printf("failed to open file: %s\n", err)
-		os.Exit(1)
-	}
+	// file, err := os.Create("tmp.txt")
+	// if err != nil {
+	// 	fmt.Printf("failed to open file: %s\n", err)
+	// 	os.Exit(1)
+	// }
 
-	if _, err := sshClient.Run(os.Stdin, file, os.Stderr); err != nil {
-		fmt.Printf("failed to run command: %s\n", err)
+	if err := sshClient.Connect(
+		os.Stdin,
+		os.Stdout,
+		// file,
+		os.Stderr,
+	); err != nil {
+		fmt.Printf("failed to run ssh client: %s\n", err)
 		os.Exit(1)
 	}
 

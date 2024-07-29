@@ -31,7 +31,7 @@ const (
 var pages = []app.Page{
 	{
 		PageTitle: "🏡 Home",
-		Desc:      "The home page",
+		Desc:      "All about me",
 		Filepath:  "pages/home.md",
 	},
 	{
@@ -114,10 +114,19 @@ func main() {
 	}
 }
 
-func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-	renderer := bubbletea.MakeRenderer(s)
+func teaHandler(sess ssh.Session) (tea.Model, []tea.ProgramOption) {
+	renderer := bubbletea.MakeRenderer(sess)
+
+	pty, _, active := sess.Pty()
+	if !active {
+		wish.Fatalln(sess, "no active pty")
+
+	}
 
 	m := app.Model{
+		Term:    pty.Term,
+		Width:   pty.Window.Width,
+		Height:  pty.Window.Height,
 		Content: app.NewContent(renderer, pages),
 		Nav:     app.NewNav(renderer, pages),
 		Footer:  app.NewFooter(renderer, app.InputKeys),
