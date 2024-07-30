@@ -41,7 +41,14 @@ func (c *content) update(pageNum int) string {
 }
 
 func (c *content) md(plain string) string {
-	rendered, err := glamour.Render(plain, "dracula")
+	tr, err := glamour.NewTermRenderer(
+		glamour.WithWordWrap(c.model.Width-2),
+		glamour.WithStylePath("dracula"),
+	)
+	if err != nil {
+		return fmt.Sprintf("Failed to create term renderer: %s", err)
+	}
+	rendered, err := tr.Render(plain)
 	if err != nil {
 		return fmt.Sprintf("Failed to render '%s': %s", plain, err)
 	}

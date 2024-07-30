@@ -1,7 +1,6 @@
 package app
 
 import (
-	"log"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -23,13 +22,6 @@ type Model struct {
 }
 
 func (m Model) Init() tea.Cmd {
-	f, err := tea.LogToFile("debug.log", "debug")
-	if err != nil {
-		log.Print("failed to open debug.log")
-	}
-	defer f.Close()
-
-	log.Print("init")
 	return nil
 }
 
@@ -62,7 +54,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		// layout on window size
 		m.ready = false
 
 		viewportHeight := msg.Height - m.Footer.style.GetHeight() - 2
@@ -72,6 +63,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.Content.model.Width = msg.Width - m.Nav.model.Width()
 		m.Content.model.Height = viewportHeight
+
+		// explicitly call update so that wordwrap is applied
+		m.Content.update(m.activePage)
 
 		m.ready = true
 	}
