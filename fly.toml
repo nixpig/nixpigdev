@@ -1,0 +1,24 @@
+# fly.toml app configuration file generated for nixpigdev on 2024-07-30T05:08:18+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'nixpigdev'
+primary_region = 'lhr'
+
+[build]
+  [build.args]
+    GO_VERSION = '1.22.4'
+
+[services]
+  internal_port = 23234
+  protocol = 'tcp'
+  auto_stop_machines = true
+  auto_start_machines = true
+  [[services.ports]]
+    port = 22
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

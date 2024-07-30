@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	hostname = "localhost"
+	hostname = "0.0.0.0"
 	port     = "23234"
 )
 
