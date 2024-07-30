@@ -17,6 +17,7 @@ import (
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/nixpig/nixpigdev/app"
 	"github.com/nixpig/nixpigdev/logging"
+	pfs "github.com/nixpig/nixpigdev/pages"
 	"github.com/rs/zerolog"
 )
 
@@ -32,22 +33,22 @@ var pages = []app.Page{
 	{
 		PageTitle: "🏡 Home",
 		Desc:      "All about me",
-		Filepath:  "pages/home.md",
+		Filepath:  "home.md",
 	},
 	{
 		PageTitle: "🏗️ Projects",
 		Desc:      "Open source stuff",
-		Filepath:  "pages/projects.md",
+		Filepath:  "projects.md",
 	},
 	{
 		PageTitle: "💻️ Uses",
 		Desc:      "The stuff I use",
-		Filepath:  "pages/uses.md",
+		Filepath:  "uses.md",
 	},
 	{
 		PageTitle: "📬️ Contact",
 		Desc:      "Come say hi!",
-		Filepath:  "pages/contact.md",
+		Filepath:  "contact.md",
 	},
 }
 
@@ -66,7 +67,7 @@ func main() {
 		go func(i int, filepath string) {
 			defer wg.Done()
 			if filepath != "" {
-				content, err := os.ReadFile(filepath)
+				content, err := pfs.Pages.ReadFile(filepath)
 				if err != nil {
 					logger.Error().Err(err).Str("filepath", filepath).Msg("failed to load file content")
 					return
