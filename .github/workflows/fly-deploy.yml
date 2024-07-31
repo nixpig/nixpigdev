@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: timheuer/base64-to-file@v1.2
         with:
-          fileName: "ed25519"
+          fileName: "id_ed25519"
           fileDir: ".ssh"
           encodedString: ${{ secrets.SSH_KEY }}
       - uses: superfly/flyctl-actions/setup-flyctl@master
