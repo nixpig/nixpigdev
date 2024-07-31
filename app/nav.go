@@ -25,22 +25,22 @@ func NewNav(renderer *lipgloss.Renderer, pages []Page) *nav {
 	delegate := list.NewDefaultDelegate()
 	delegate.Styles = list.NewDefaultItemStyles()
 
-	delegate.Styles.NormalTitle = lipgloss.NewStyle().
+	delegate.Styles.NormalTitle = renderer.NewStyle().
 		Foreground(lipgloss.Color("#F8F8F2")).
 		PaddingLeft(2)
 
-	delegate.Styles.SelectedTitle = lipgloss.NewStyle().
+	delegate.Styles.SelectedTitle = renderer.NewStyle().
 		Foreground(lipgloss.Color("#FF79C6")).
 		PaddingLeft(1).
 		BorderLeft(true).
 		BorderForeground(lipgloss.Color("#FF79C6")).
 		BorderStyle(lipgloss.NormalBorder())
 
-	delegate.Styles.NormalDesc = lipgloss.NewStyle().
+	delegate.Styles.NormalDesc = renderer.NewStyle().
 		Foreground(lipgloss.Color("#a5a6a7")).
 		PaddingLeft(2)
 
-	delegate.Styles.SelectedDesc = lipgloss.NewStyle().
+	delegate.Styles.SelectedDesc = renderer.NewStyle().
 		Foreground(lipgloss.Color("#e58ac0")).
 		PaddingLeft(1).
 		BorderLeft(true).
