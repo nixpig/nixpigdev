@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/nixpigdev/theme"
 )
 
 type nav struct {
@@ -26,25 +27,25 @@ func NewNav(renderer *lipgloss.Renderer, pages []Page) *nav {
 	delegate.Styles = list.NewDefaultItemStyles()
 
 	delegate.Styles.NormalTitle = renderer.NewStyle().
-		Foreground(lipgloss.Color("#F8F8F2")).
+		Foreground(lipgloss.Color(theme.Dracula.Foreground)).
 		PaddingLeft(2)
 
 	delegate.Styles.SelectedTitle = renderer.NewStyle().
-		Foreground(lipgloss.Color("#FF79C6")).
+		Foreground(lipgloss.Color(theme.Dracula.Pink)).
 		PaddingLeft(1).
 		BorderLeft(true).
-		BorderForeground(lipgloss.Color("#FF79C6")).
+		BorderForeground(lipgloss.Color(theme.Dracula.Pink)).
 		BorderStyle(lipgloss.NormalBorder())
 
 	delegate.Styles.NormalDesc = renderer.NewStyle().
-		Foreground(lipgloss.Color("#a5a6a7")).
+		Foreground(lipgloss.Color(theme.Dracula.Faint)).
 		PaddingLeft(2)
 
 	delegate.Styles.SelectedDesc = renderer.NewStyle().
-		Foreground(lipgloss.Color("#e58ac0")).
+		Foreground(lipgloss.Color(theme.Dracula.Foreground)).
 		PaddingLeft(1).
 		BorderLeft(true).
-		BorderForeground(lipgloss.Color("#FF79C6")).
+		BorderForeground(lipgloss.Color(theme.Dracula.Pink)).
 		BorderStyle(lipgloss.NormalBorder())
 
 	initialModel := list.New(
@@ -54,12 +55,12 @@ func NewNav(renderer *lipgloss.Renderer, pages []Page) *nav {
 	)
 
 	promptStyle := renderer.NewStyle().
-		Background(lipgloss.Color("#BD93F9")).
-		Foreground(lipgloss.Color("#8e50e6"))
+		Background(lipgloss.Color(theme.Dracula.Purple)).
+		Foreground(lipgloss.Color(theme.Dracula.Prompt))
 
 	titleStyle := renderer.NewStyle().
-		Background(lipgloss.Color("#BD93F9")).
-		Foreground(lipgloss.Color("#F8F8F2"))
+		Background(lipgloss.Color(theme.Dracula.Purple)).
+		Foreground(lipgloss.Color(theme.Dracula.Foreground))
 
 	title := fmt.Sprintf(
 		" %s%s ",
@@ -68,8 +69,8 @@ func NewNav(renderer *lipgloss.Renderer, pages []Page) *nav {
 	)
 
 	initialModel.Styles.Title = renderer.NewStyle().
-		Background(lipgloss.Color("#BD93F9")).
-		Foreground(lipgloss.Color("#F8F8F2"))
+		Background(lipgloss.Color(theme.Dracula.Purple)).
+		Foreground(lipgloss.Color(theme.Dracula.Foreground))
 
 	initialModel.Title = title
 	initialModel.SetShowPagination(false)
