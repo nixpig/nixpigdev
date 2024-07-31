@@ -9,12 +9,18 @@ on:
       reason:
         description: "Reason for manual trigger"
         required: true
+
 jobs:
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: timheuer/base64-to-file@v1.2
+        with:
+          fileName: "ed25519"
+          fileDir: ".ssh"
+          encodedString: ${{ secrets.SSH_KEY }}
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy --remote-only
         env:
