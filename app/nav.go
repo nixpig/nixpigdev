@@ -1,7 +1,7 @@
 package app
 
 import (
-	"strings"
+	"fmt"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
@@ -61,23 +61,21 @@ func NewNav(renderer *lipgloss.Renderer, pages []Page) *nav {
 		Background(lipgloss.Color("#BD93F9")).
 		Foreground(lipgloss.Color("#F8F8F2"))
 
-	t := strings.Join([]string{
-		" ",
+	title := fmt.Sprintf(
+		" %s%s ",
 		promptStyle.Render("$ "),
 		titleStyle.Render("ssh nixpig.dev "),
-	}, "")
-
-	initialModel.SetShowPagination(false)
-	initialModel.SetShowHelp(false)
-	initialModel.Title = t
-	initialModel.SetFilteringEnabled(false)
-	initialModel.SetShowStatusBar(false)
-
-	// initialModel.Styles.Title = renderer.NewStyle().Foreground(lipgloss.Color("#BD93F9"))
+	)
 
 	initialModel.Styles.Title = renderer.NewStyle().
 		Background(lipgloss.Color("#BD93F9")).
 		Foreground(lipgloss.Color("#F8F8F2"))
+
+	initialModel.Title = title
+	initialModel.SetShowPagination(false)
+	initialModel.SetShowHelp(false)
+	initialModel.SetFilteringEnabled(false)
+	initialModel.SetShowStatusBar(false)
 
 	return &nav{
 		style: navStyle,
