@@ -42,7 +42,8 @@
         grid-column: 2;
       }
 
-      header {
+      header,
+      aside {
         padding: 0 1rem;
         display: flex;
         align-items: center;
@@ -77,10 +78,13 @@
       h1 {
         font-family: var(--header-font);
         color: var(--text-faint);
+        margin: 0;
       }
 
       h2 {
         color: var(--text-faint);
+        font-weight: normal;
+        font-size: 1.175rem;
         margin-top: 0;
       }
 
@@ -180,6 +184,9 @@
       </li>
     </ul>
   </header>
+  <aside>
+    <h2>Software engineer with a penchant for the terminal</h2>
+  </aside>
   <main>
     <p>For the best experience, connect from your terminal using <a href="https://en.wikipedia.org/wiki/Secure_Shell" target="_blank">SSH</a>.</p>
     <pre><code><span class="prompt-code">$ </span><span class="ssh-code">ssh</span> <span class="npd-code">nixpig.dev</span><span id="copy"><svg viewbox="0 0 24 24" stroke="currentcolor" fill="none" xmlns="http://www.w3.org/2000/svg"> 
@@ -200,8 +207,8 @@
         navigator.clipboard.writeText("ssh nixpig.dev");
 
         const copyRect = copy.getBoundingClientRect();
-        copied.style.top = `${copyRect.bottom}px`;
-        copied.style.left = `${copyRect.left}px`;
+        copied.style.top = `${copyRect.top}px`;
+        copied.style.left = `${document.body.offsetWidth / 2}px`;
         copied.style.position = "absolute";
         copied.style.visibility = "visible";
         copied.style.opacity = 1;
