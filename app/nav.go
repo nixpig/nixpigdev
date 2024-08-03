@@ -16,7 +16,7 @@ type nav struct {
 func NewNav(renderer *lipgloss.Renderer, pages []Page) *nav {
 	navStyle := renderer.NewStyle().
 		MarginTop(1).
-		PaddingRight(1)
+		PaddingRight(0)
 
 	var listItems = make([]list.Item, len(pages))
 	for i, page := range pages {
@@ -42,7 +42,7 @@ func NewNav(renderer *lipgloss.Renderer, pages []Page) *nav {
 		PaddingLeft(2)
 
 	delegate.Styles.SelectedDesc = renderer.NewStyle().
-		Foreground(lipgloss.Color(theme.Dracula.Foreground)).
+		Foreground(lipgloss.Color(theme.Dracula.Faint)).
 		PaddingLeft(1).
 		BorderLeft(true).
 		BorderForeground(lipgloss.Color(theme.Dracula.Pink)).

@@ -15,7 +15,7 @@ type content struct {
 }
 
 func NewContent(renderer *lipgloss.Renderer, pages []Page) *content {
-	contentStyle := renderer.NewStyle().MarginLeft(1)
+	contentStyle := renderer.NewStyle()
 	initialModel := viewport.New(0, 0)
 
 	c := &content{
@@ -42,7 +42,7 @@ func (c *content) update(pageNum int) string {
 
 func (c *content) md(plain string) string {
 	tr, err := glamour.NewTermRenderer(
-		glamour.WithWordWrap(c.model.Width-2),
+		glamour.WithWordWrap(c.model.Width),
 		glamour.WithStylePath("dracula"),
 	)
 	if err != nil {

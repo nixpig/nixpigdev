@@ -5,7 +5,7 @@ primary_region = 'lhr'
   [build.args]
     GO_VERSION = '1.22.4'
 
-[services]
+[[services]]
   internal_port = 23234
   protocol = 'tcp'
   auto_stop_machines = true
@@ -13,7 +13,17 @@ primary_region = 'lhr'
   [[services.ports]]
     port = 22
 
+# [[services]]
+#   internal_port = 8080
+#   protocol = 'tcp'
+#   auto_stop_machines = true
+#   auto_start_machines = true
+#   [[services.ports]]
+#     handlers = ["tls", "http"]
+#     port = 443
+
 [[vm]]
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
+

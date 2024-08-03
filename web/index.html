@@ -16,6 +16,8 @@
 
         --white: #ffffff;
         --bg: #0e0d11;
+        --panel-bg: #1d1b22;
+        --code-comment: #312e38;
         --text-light: #f8f8f2;
         --text-faint: #b3afc0;
         --yellow: #f1fa8c;
@@ -42,9 +44,13 @@
         grid-column: 2;
       }
 
+      header {
+        margin-top: 1.125rem;
+      }
+
       header,
       aside {
-        padding: 0 1rem;
+        padding: 0 0.5rem;
         display: flex;
         align-items: center;
       }
@@ -92,8 +98,18 @@
         margin-top: 0;
       }
 
+      summary {
+        margin-bottom: 0.875rem;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+
+      details img {
+        border-radius: var(--small-border-radius);
+      }
+
       main {
-        background-color: #1d1b22;
+        background-color: var(--panel-bg);
         color: var(--text-light);
         padding: 1rem 1.125rem 0.375rem;
         border-radius: var(--standard-border-radius);
@@ -136,6 +152,15 @@
 
       .npd-code {
         color: var(--text-light);
+      }
+
+      .code-comment {
+        font-style: italic;
+        color: var(--code-comment);
+
+        @media (max-width: 470px) {
+          display: none !important;
+        }
       }
 
       footer {
@@ -185,12 +210,18 @@
     </ul>
   </header>
   <aside>
-    <h2>Software engineer with a penchant for the terminal</h2>
+    <h2>Software engineer with a penchant for the simple things in life ♥</h2>
   </aside>
   <main>
     <p>For the best experience, connect from your terminal using <a href="https://en.wikipedia.org/wiki/Secure_Shell" target="_blank">SSH</a>.</p>
-    <pre><code><span class="prompt-code">$ </span><span class="ssh-code">ssh</span> <span class="npd-code">nixpig.dev</span><span id="copy"><svg viewbox="0 0 24 24" stroke="currentcolor" fill="none" xmlns="http://www.w3.org/2000/svg"> 
+    <pre><code><span class="prompt-code">$ </span><span class="ssh-code">ssh</span> <span class="npd-code">nixpig.dev</span> <span class="code-comment">#gatekeeping</span><span id="copy"><svg viewbox="0 0 24 24" stroke="currentcolor" fill="none" xmlns="http://www.w3.org/2000/svg"> 
 <path d="M17.5 14H19C20.1046 14 21 13.1046 21 12V5C21 3.89543 20.1046 3 19 3H12C10.8954 3 10 3.89543 10 5V6.5M5 10H12C13.1046 10 14 10.8954 14 12V19C14 20.1046 13.1046 21 12 21H5C3.89543 21 3 20.1046 3 19V12C3 10.8954 3.89543 10 5 10Z" stroke="currentcolor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </svg></span></code></pre>
+    <details>
+      <summary>
+        Example
+      </summary>
+      <p><img style="max-width: 100%" src="example.gif" alt="gif of ssh into nixpig.dev"></p>
+    </details>
   </main>
   <footer>
     © 2024 nixpig.dev
@@ -201,7 +232,6 @@
   <script>
       const copy = document.getElementById("copy");
       const copied = document.getElementById("copied");
-      document.body.appendChild(copied);
 
       copy.addEventListener("click", () => {
         navigator.clipboard.writeText("ssh nixpig.dev");

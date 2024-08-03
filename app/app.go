@@ -58,8 +58,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		viewportHeight := msg.Height - m.Footer.style.GetHeight() - 2
 
+		m.Nav.model.SetWidth(23)
 		m.Nav.model.SetHeight(viewportHeight)
-		m.Nav.model.SetWidth(25)
 
 		m.Content.model.Width = msg.Width - m.Nav.model.Width()
 		m.Content.model.Height = viewportHeight

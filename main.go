@@ -32,17 +32,22 @@ const (
 var pages = []app.Page{
 	{
 		PageTitle: "🏡 Home",
-		Desc:      "All about me",
+		Desc:      "Where the ♥ is",
 		Filepath:  "home.md",
 	},
 	{
 		PageTitle: "🏗️ Projects",
-		Desc:      "Open source stuff",
+		Desc:      "OSS + personal work",
 		Filepath:  "projects.md",
 	},
 	{
+		PageTitle: "🗒️ Résumé",
+		Desc:      "Skills + experience",
+		Filepath:  "resume.md",
+	},
+	{
 		PageTitle: "💻️ Uses",
-		Desc:      "The stuff I use",
+		Desc:      "My daily drivers",
 		Filepath:  "uses.md",
 	},
 	{
