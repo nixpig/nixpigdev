@@ -11,7 +11,7 @@ type footer struct {
 	helpKeyMap help.KeyMap
 }
 
-func NewFooter(renderer *lipgloss.Renderer, helpKeyMap help.KeyMap) *footer {
+func newFooter(renderer *lipgloss.Renderer, helpKeyMap help.KeyMap) *footer {
 	footerStyle := renderer.
 		NewStyle().
 		AlignHorizontal(lipgloss.Center).

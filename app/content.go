@@ -6,25 +6,26 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/nixpigdev/app/pages"
 )
 
 type content struct {
-	style lipgloss.Style
-	model viewport.Model
-	pages []Page
+	style    lipgloss.Style
+	model    viewport.Model
+	contents []pages.Page
 }
 
-func NewContent(renderer *lipgloss.Renderer, pages []Page) *content {
+func newContent(renderer *lipgloss.Renderer, contents []pages.Page) *content {
 	contentStyle := renderer.NewStyle()
 	initialModel := viewport.New(0, 0)
 
 	c := &content{
-		style: contentStyle,
-		model: initialModel,
-		pages: pages,
+		style:    contentStyle,
+		model:    initialModel,
+		contents: contents,
 	}
 
-	c.model.SetContent(c.style.Render(c.md(pages[0].Content)))
+	c.model.SetContent(c.style.Render(c.md(contents[0].Content())))
 
 	return c
 }
@@ -35,7 +36,7 @@ func (c *content) view() string {
 
 func (c *content) update(pageNum int) string {
 	c.model.GotoTop()
-	c.model.SetContent(c.style.Render(c.md(c.pages[pageNum].Content)))
+	c.model.SetContent(c.style.Render(c.md(c.contents[pageNum].Content())))
 
 	return c.view()
 }

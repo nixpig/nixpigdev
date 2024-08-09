@@ -5,7 +5,8 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/nixpig/nixpigdev/theme"
+	"github.com/nixpig/nixpigdev/app/pages"
+	"github.com/nixpig/nixpigdev/app/theme"
 )
 
 type nav struct {
@@ -13,13 +14,13 @@ type nav struct {
 	model list.Model
 }
 
-func NewNav(renderer *lipgloss.Renderer, pages []Page) *nav {
+func newNav(renderer *lipgloss.Renderer, contents []pages.Page) *nav {
 	navStyle := renderer.NewStyle().
 		MarginTop(1).
 		PaddingRight(0)
 
-	var listItems = make([]list.Item, len(pages))
-	for i, page := range pages {
+	var listItems = make([]list.Item, len(contents))
+	for i, page := range contents {
 		listItems[i] = page
 	}
 
@@ -35,7 +36,7 @@ func NewNav(renderer *lipgloss.Renderer, pages []Page) *nav {
 		PaddingLeft(1).
 		BorderLeft(true).
 		BorderForeground(lipgloss.Color(theme.Dracula.Pink)).
-		BorderStyle(lipgloss.NormalBorder())
+		BorderStyle(lipgloss.ThickBorder())
 
 	delegate.Styles.NormalDesc = renderer.NewStyle().
 		Foreground(lipgloss.Color(theme.Dracula.Faint)).
@@ -46,7 +47,7 @@ func NewNav(renderer *lipgloss.Renderer, pages []Page) *nav {
 		PaddingLeft(1).
 		BorderLeft(true).
 		BorderForeground(lipgloss.Color(theme.Dracula.Pink)).
-		BorderStyle(lipgloss.NormalBorder())
+		BorderStyle(lipgloss.ThickBorder())
 
 	initialModel := list.New(
 		listItems,

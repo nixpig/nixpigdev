@@ -6,9 +6,30 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/ssh"
+	"github.com/nixpig/nixpigdev/app/pages"
 )
 
-type Model struct {
+func New(pty ssh.Pty, renderer *lipgloss.Renderer) model {
+	var pages = []pages.Page{
+		pages.Home(renderer),
+		pages.Notes(renderer),
+		pages.Projects(renderer),
+		pages.Uses(renderer),
+		pages.Contact(renderer),
+	}
+
+	return model{
+		Term:    pty.Term,
+		Width:   pty.Window.Width,
+		Height:  pty.Window.Height,
+		Content: newContent(renderer, pages),
+		Nav:     newNav(renderer, pages),
+		Footer:  newFooter(renderer, InputKeys),
+	}
+}
+
+type model struct {
 	Term     string
 	Width    int
 	Height   int
@@ -21,11 +42,11 @@ type Model struct {
 	activePage int
 }
 
-func (m Model) Init() tea.Cmd {
+func (m model) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -73,7 +94,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) View() string {
+func (m model) View() string {
 	if !m.ready {
 		return "\nLoading..."
 	}

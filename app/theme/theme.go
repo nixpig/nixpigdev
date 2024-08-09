@@ -1,7 +1,6 @@
 package theme
 
-type Theme struct {
-	Background string
+type theme struct {
 	Foreground string
 	Faint      string
 	Prompt     string
@@ -14,8 +13,7 @@ type Theme struct {
 	Yellow     string
 }
 
-var Dracula = Theme{
-	Background: "#282a36",
+var Dracula = theme{
 	Foreground: "#f8f8f2",
 	Faint:      "#44475a",
 	Prompt:     "#8e50e6",

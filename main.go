@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/nixpig/nixpigdev/app"
 	"github.com/nixpig/nixpigdev/logging"
-	pfs "github.com/nixpig/nixpigdev/pages"
 	"github.com/rs/zerolog"
 )
 
@@ -29,34 +27,6 @@ const (
 // TODO: recover from panics
 // TODO: rate limiting
 
-var pages = []app.Page{
-	{
-		PageTitle: "🏡 Home",
-		Desc:      "Where the ♥ is",
-		Filepath:  "home.md",
-	},
-	{
-		PageTitle: "🏗️ Projects",
-		Desc:      "OSS + personal work",
-		Filepath:  "projects.md",
-	},
-	{
-		PageTitle: "🗒️ Résumé",
-		Desc:      "Skills + experience",
-		Filepath:  "resume.md",
-	},
-	{
-		PageTitle: "💻️ Uses",
-		Desc:      "My daily drivers",
-		Filepath:  "uses.md",
-	},
-	{
-		PageTitle: "📬️ Contact",
-		Desc:      "Come say hi!",
-		Filepath:  "contact.md",
-	},
-}
-
 func main() {
 	var logger = zerolog.
 		New(os.Stdout).
@@ -64,25 +34,6 @@ func main() {
 			Out:        os.Stdout,
 			TimeFormat: "2006-01-02T15:04:05.999Z07:00",
 		}).With().Timestamp().Logger()
-
-	wg := &sync.WaitGroup{}
-	for i, page := range pages {
-		logger.Info().Str("page", page.Filepath).Msg("loading file")
-		wg.Add(1)
-		go func(i int, filepath string) {
-			defer wg.Done()
-			if filepath != "" {
-				content, err := pfs.Pages.ReadFile(filepath)
-				if err != nil {
-					logger.Error().Err(err).Str("filepath", filepath).Msg("failed to load file content")
-					return
-				}
-
-				pages[i].Content = string(content)
-			}
-		}(i, page.Filepath)
-	}
-	wg.Wait()
 
 	s, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(hostname, port)),
@@ -129,16 +80,7 @@ func teaHandler(sess ssh.Session) (tea.Model, []tea.ProgramOption) {
 
 	}
 
-	m := app.Model{
-		Term:    pty.Term,
-		Width:   pty.Window.Width,
-		Height:  pty.Window.Height,
-		Content: app.NewContent(renderer, pages),
-		Nav:     app.NewNav(renderer, pages),
-		Footer:  app.NewFooter(renderer, app.InputKeys),
-	}
-
-	return m, []tea.ProgramOption{
+	return app.New(pty, renderer), []tea.ProgramOption{
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
 	}

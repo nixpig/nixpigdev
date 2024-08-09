@@ -1,3 +1,13 @@
+package pages
+
+import "github.com/charmbracelet/lipgloss"
+
+func Uses(renderer *lipgloss.Renderer) Page {
+	uses := Page{
+		title:       "Uses",
+		description: "My daily drivers",
+		renderer:    renderer,
+		content: `
 # Uses
 
 I'm a simple person, with simple needs. I spend most of my time in the terminal, and my setup is built around being able to work in that environment (somewhat) efficiently.
@@ -25,3 +35,8 @@ I'm a simple person, with simple needs. I spend most of my time in the terminal,
 ## Dotfiles
 
 - [nixpig/dotfiles](https://github.com/nixpig/dotfiles)
+		`,
+	}
+
+	return uses
+}
