@@ -6,24 +6,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-func NewPage(
-	title,
-	description,
-	content string,
-	renderer *lipgloss.Renderer,
-) Page {
-	return Page{
-		title:       title,
-		description: description,
-		content:     content,
-		renderer:    renderer,
-	}
-}
-
 type Page struct {
 	title       string
 	description string
-	content     string
+	content     func(w int, md func(p string) string) string
 	renderer    *lipgloss.Renderer
 }
 
@@ -39,6 +25,6 @@ func (p Page) FilterValue() string {
 	return fmt.Sprintf("%s %s", p.title, p.description)
 }
 
-func (p Page) Content() string {
-	return p.renderer.NewStyle().Render(p.content)
+func (p Page) Content(w int, md func(p string) string) string {
+	return p.renderer.NewStyle().Render(p.content(w, md))
 }

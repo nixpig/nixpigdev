@@ -13,10 +13,10 @@ import (
 func New(pty ssh.Pty, renderer *lipgloss.Renderer) model {
 	var pages = []pages.Page{
 		pages.Home(renderer),
-		pages.Notes(renderer),
-		pages.Projects(renderer),
-		pages.Uses(renderer),
-		pages.Contact(renderer),
+		// pages.Notes(renderer),
+		// pages.Projects(renderer),
+		// pages.Uses(renderer),
+		// pages.Contact(renderer),
 	}
 
 	return model{

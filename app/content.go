@@ -25,7 +25,7 @@ func newContent(renderer *lipgloss.Renderer, contents []pages.Page) *content {
 		contents: contents,
 	}
 
-	c.model.SetContent(c.style.Render(c.md(contents[0].Content())))
+	c.model.SetContent(c.style.Render(contents[0].Content(c.model.Width, c.md)))
 
 	return c
 }
@@ -36,7 +36,7 @@ func (c *content) view() string {
 
 func (c *content) update(pageNum int) string {
 	c.model.GotoTop()
-	c.model.SetContent(c.style.Render(c.md(c.contents[pageNum].Content())))
+	c.model.SetContent(c.style.Render(c.contents[pageNum].Content(c.model.Width, c.md)))
 
 	return c.view()
 }
