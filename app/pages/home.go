@@ -15,8 +15,8 @@ func Home(
 		description: "Where the ♥ is",
 		renderer:    renderer,
 		content: func(w int, markdown func(p string) string) string {
-			foo := renderer.NewStyle().Width(w/2 - 2).Border(lipgloss.NormalBorder()).Render("Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
-			bar := renderer.NewStyle().Width(w/2 - 2).Border(lipgloss.NormalBorder()).Render("Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
+			foo := renderer.NewStyle().MarginLeft(1).Width(w/2 - 2).PaddingLeft(1).PaddingRight(1).Render("Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
+			bar := renderer.NewStyle().Width(w/2 - 2).PaddingLeft(1).PaddingRight(1).Render("Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
 
 			baz := lipgloss.JoinHorizontal(lipgloss.Top, foo, bar)
 			return strings.Join(
