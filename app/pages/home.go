@@ -15,10 +15,13 @@ func Home(
 		description: "Where the ♥ is",
 		renderer:    renderer,
 		content: func(w int, markdown func(p string) string) string {
-			foo := renderer.NewStyle().MarginLeft(1).Width(w/2 - 2).PaddingLeft(1).PaddingRight(1).Render("Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
-			bar := renderer.NewStyle().Width(w/2 - 2).PaddingLeft(1).PaddingRight(1).Render("Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
+			foo := renderer.NewStyle().Width(w / 2).PaddingLeft(1).PaddingRight(1).Render("Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
+			bar := renderer.NewStyle().Width(w / 2).PaddingLeft(1).PaddingRight(1).Render("Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
 
 			baz := lipgloss.JoinHorizontal(lipgloss.Top, foo, bar)
+
+			qux := renderer.NewStyle().PaddingLeft(1).PaddingRight(1).Render(baz)
+
 			return strings.Join(
 				[]string{
 					markdown(`
@@ -28,7 +31,7 @@ I’m a software engineer from the UK, currently working as a _Senior Technical 
 
 I live in the countryside with my beautiful partner, cats and dog.
 					`),
-					baz,
+					qux,
 					"\n",
 					markdown(`
 My day job consists mostly of _TypeScript_ and _Java_ on _Azure_.
