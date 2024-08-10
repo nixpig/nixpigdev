@@ -13,10 +13,11 @@ import (
 )
 
 type Content struct {
-	style    lipgloss.Style
-	model    viewport.Model
-	contents []pages.Page
-	renderer *lipgloss.Renderer
+	style      lipgloss.Style
+	model      viewport.Model
+	contents   []pages.Page
+	renderer   *lipgloss.Renderer
+	activePage int
 }
 
 func NewContent(renderer *lipgloss.Renderer, contents []pages.Page) *Content {
@@ -41,7 +42,8 @@ func (c *Content) View() string {
 }
 
 func (c *Content) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	fmt.Println(msg)
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -53,10 +55,13 @@ func (c *Content) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			c.model.GotoTop()
 		}
 
+		_, cmd = c.contents[c.activePage].Update(msg)
+
 	case pages.ActivePage:
+		c.activePage = int(msg)
 		c.model.SetContent(
 			c.style.Render(
-				c.contents[msg].View(
+				c.contents[c.activePage].View(
 					pages.ContentSize{
 						Width:  c.model.Width,
 						Height: c.model.Height,
@@ -72,7 +77,7 @@ func (c *Content) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.model.Height = msg.Height
 	}
 
-	return c, nil
+	return c, cmd
 }
 
 func (c *Content) md(plain string) string {

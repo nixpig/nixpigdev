@@ -14,12 +14,8 @@ import (
 
 func New(pty ssh.Pty, renderer *lipgloss.Renderer) model {
 	var pages = []pages.Page{
-		pages.Home(),
-		pages.Scrapbook(),
-		pages.Projects(),
-		pages.Uses(),
-		pages.Resume(),
-		pages.Contact(),
+		&pages.Uses,
+		&pages.Contact,
 	}
 
 	return model{
@@ -45,6 +41,8 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -57,8 +55,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.activePage++
 			}
-			m.Nav.Update(sections.SelectIndex(m.activePage))
-			m.Content.Update(pages.ActivePage(m.activePage))
+			_, cmd = m.Nav.Update(sections.SelectIndex(m.activePage))
+			cmds = append(cmds, cmd)
+			_, cmd = m.Content.Update(pages.ActivePage(m.activePage))
+			cmds = append(cmds, cmd)
 
 		case key.Matches(msg, keys.InputKeys.Prev):
 			if m.activePage == 0 {
@@ -66,35 +66,41 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.activePage--
 			}
-			m.Nav.Update(sections.SelectIndex(m.activePage))
-			m.Content.Update(pages.ActivePage(m.activePage))
+			_, cmd = m.Nav.Update(sections.SelectIndex(m.activePage))
+			cmds = append(cmds, cmd)
+			_, cmd = m.Content.Update(pages.ActivePage(m.activePage))
+			cmds = append(cmds, cmd)
 
 		}
 
-		m.Content.Update(msg)
+		_, cmd = m.Content.Update(msg)
+		cmds = append(cmds, cmd)
 
 	case tea.WindowSizeMsg:
 		m.ready = false
 
 		viewportHeight := msg.Height - m.Footer.Height() - 2
 
-		m.Nav.Update(tea.WindowSizeMsg{
+		_, cmd = m.Nav.Update(tea.WindowSizeMsg{
 			Width:  23,
 			Height: viewportHeight,
 		})
+		cmds = append(cmds, cmd)
 
-		m.Content.Update(tea.WindowSizeMsg{
+		_, cmd = m.Content.Update(tea.WindowSizeMsg{
 			Width:  msg.Width - m.Nav.Width(),
 			Height: viewportHeight,
 		})
+		cmds = append(cmds, cmd)
 
 		// explicitly call update so that wordwrap is applied
-		m.Content.Update(pages.ActivePage(m.activePage))
+		_, cmd = m.Content.Update(pages.ActivePage(m.activePage))
+		cmds = append(cmds, cmd)
 
 		m.ready = true
 	}
 
-	return m, nil
+	return m, tea.Batch(cmds...)
 }
 
 func (m model) View() string {
