@@ -13,7 +13,6 @@ import (
 )
 
 func New(pty ssh.Pty, renderer *lipgloss.Renderer) model {
-	ch := make(chan string)
 	var pages = []pages.Page{
 		pages.Home(),
 		pages.Scrapbook(),
@@ -24,25 +23,18 @@ func New(pty ssh.Pty, renderer *lipgloss.Renderer) model {
 	}
 
 	return model{
-		Term:    pty.Term,
-		Width:   pty.Window.Width,
-		Height:  pty.Window.Height,
 		Content: sections.NewContent(renderer, pages),
 		Nav:     sections.NewNav(renderer, pages),
 		Footer:  sections.NewFooter(renderer, keys.InputKeys),
-		Ch:      ch,
 	}
 }
 
 type model struct {
 	Term     string
-	Width    int
-	Height   int
 	Nav      *sections.Nav
 	Content  *sections.Content
 	Footer   *sections.Footer
 	Renderer *lipgloss.Renderer
-	Ch       chan string
 
 	ready      bool
 	activePage int
@@ -84,7 +76,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.ready = false
 
-		viewportHeight := msg.Height - m.Footer.GetHeight() - 2
+		viewportHeight := msg.Height - m.Footer.Height() - 2
 
 		m.Nav.Update(tea.WindowSizeMsg{
 			Width:  23,

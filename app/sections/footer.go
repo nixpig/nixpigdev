@@ -43,6 +43,6 @@ func (f *Footer) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return f, nil
 }
 
-func (f *Footer) GetHeight() int {
+func (f *Footer) Height() int {
 	return f.style.GetHeight()
 }

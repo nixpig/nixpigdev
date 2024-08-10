@@ -29,19 +29,6 @@ func NewContent(renderer *lipgloss.Renderer, contents []pages.Page) *Content {
 		contents: contents,
 	}
 
-	c.model.SetContent(
-		c.style.Render(
-			contents[0].View(
-				pages.ContentSize{
-					Width:  c.model.Width,
-					Height: c.model.Height,
-				},
-				c.md,
-				renderer,
-			),
-		),
-	)
-
 	return c
 }
 
