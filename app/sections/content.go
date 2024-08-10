@@ -16,6 +16,7 @@ type Content struct {
 	style    lipgloss.Style
 	model    viewport.Model
 	contents []pages.Page
+	renderer *lipgloss.Renderer
 }
 
 func NewContent(renderer *lipgloss.Renderer, contents []pages.Page) *Content {
@@ -28,7 +29,18 @@ func NewContent(renderer *lipgloss.Renderer, contents []pages.Page) *Content {
 		contents: contents,
 	}
 
-	c.model.SetContent(c.style.Render(contents[0].View(c.model.Width, c.md)))
+	c.model.SetContent(
+		c.style.Render(
+			contents[0].View(
+				pages.ContentSize{
+					Width:  c.model.Width,
+					Height: c.model.Height,
+				},
+				c.md,
+				renderer,
+			),
+		),
+	)
 
 	return c
 }
@@ -42,6 +54,7 @@ func (c *Content) View() string {
 }
 
 func (c *Content) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	fmt.Println(msg)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -54,7 +67,18 @@ func (c *Content) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case pages.ActivePage:
-		c.model.SetContent(c.style.Render(c.contents[msg].View(c.model.Width, c.md)))
+		c.model.SetContent(
+			c.style.Render(
+				c.contents[msg].View(
+					pages.ContentSize{
+						Width:  c.model.Width,
+						Height: c.model.Height,
+					},
+					c.md,
+					c.renderer,
+				),
+			),
+		)
 
 	case tea.WindowSizeMsg:
 		c.model.Width = msg.Width

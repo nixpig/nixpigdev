@@ -7,6 +7,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+type ContentSize struct {
+	Width  int
+	Height int
+}
+
+type contentCallback func(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string
+
 type ActivePage int
 
 type mdrenderer func(md string) string
@@ -14,8 +21,7 @@ type mdrenderer func(md string) string
 type Page struct {
 	title       string
 	description string
-	content     func(w int, md mdrenderer) string
-	renderer    *lipgloss.Renderer
+	content     contentCallback
 }
 
 func (p Page) Init() tea.Cmd {
@@ -26,8 +32,12 @@ func (p Page) Update(msg tea.Msg) (tea.Msg, tea.Cmd) {
 	return nil, nil
 }
 
-func (p Page) View(w int, md mdrenderer) string {
-	return p.renderer.NewStyle().Render(p.content(w, md))
+func (p Page) View(
+	s ContentSize,
+	md mdrenderer,
+	renderer *lipgloss.Renderer,
+) string {
+	return p.content(s, md, renderer)
 }
 
 func (p Page) Title() string {

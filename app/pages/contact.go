@@ -10,21 +10,20 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-func Contact(renderer *lipgloss.Renderer, ch <-chan string) Page {
+func Contact() Page {
 	var contact = Page{
 		title:       "Contact",
 		description: "Come say hi!",
-		renderer:    renderer,
-		content: func(w int, markdown mdrenderer) string {
+		content: func(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
 			return strings.Join([]string{
-				markdown(`
+				md(`
 # Contact
 
 Feel free to reach out and say "Hi!"
 
 **✉ Email:** [hi@nixpig.dev](mailto:hi@nixpig.dev)`),
 
-				initialModel(ch).View(),
+				initialModel().View(),
 			}, "")
 		},
 	}
@@ -50,7 +49,7 @@ type model struct {
 	cursorMode cursor.Mode
 }
 
-func initialModel(ch <-chan string) model {
+func initialModel() model {
 	m := model{
 		inputs: make([]textinput.Model, 3),
 	}

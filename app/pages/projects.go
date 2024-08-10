@@ -2,16 +2,13 @@ package pages
 
 import "github.com/charmbracelet/lipgloss"
 
-func Projects(
-	renderer *lipgloss.Renderer,
-) Page {
+func Projects() Page {
 	var projects = Page{
 		title:       "Projects",
 		description: "OSS + personal projects",
-		renderer:    renderer,
-		content: func(w int, markdown mdrenderer) string {
+		content: func(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
 
-			return markdown(`
+			return md(`
 # Projects
 
 [syringe.sh](https://github.com/nixpig/syringe.sh) • _Go_

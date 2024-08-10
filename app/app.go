@@ -15,12 +15,12 @@ import (
 func New(pty ssh.Pty, renderer *lipgloss.Renderer) model {
 	ch := make(chan string)
 	var pages = []pages.Page{
-		pages.Home(renderer),
-		pages.Scrapbook(renderer),
-		pages.Projects(renderer),
-		pages.Uses(renderer),
-		pages.Resume(renderer),
-		pages.Contact(renderer, ch),
+		pages.Home(),
+		pages.Scrapbook(),
+		pages.Projects(),
+		pages.Uses(),
+		pages.Resume(),
+		pages.Contact(),
 	}
 
 	return model{
@@ -76,6 +76,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.Nav.Update(sections.SelectIndex(m.activePage))
 			m.Content.Update(pages.ActivePage(m.activePage))
+
 		}
 
 		m.Content.Update(msg)

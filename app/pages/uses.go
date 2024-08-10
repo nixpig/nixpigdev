@@ -2,13 +2,12 @@ package pages
 
 import "github.com/charmbracelet/lipgloss"
 
-func Uses(renderer *lipgloss.Renderer) Page {
+func Uses() Page {
 	var uses = Page{
 		title:       "Uses",
 		description: "Tools of the trade",
-		renderer:    renderer,
-		content: func(w int, markdown mdrenderer) string {
-			return markdown(`
+		content: func(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
+			return md(`
 # Uses
 
 I'm a simple person, with simple needs. I spend most of my time in the terminal, and my setup is built around being able to work in that environment (somewhat) efficiently.
