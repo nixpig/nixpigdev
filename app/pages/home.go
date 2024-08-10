@@ -7,22 +7,20 @@ import (
 	"github.com/nixpig/nixpigdev/app/theme"
 )
 
-func Home(
-	renderer *lipgloss.Renderer,
-) Page {
+func Home() Page {
 	var home = Page{
 		title:       "Home",
 		description: "Where the ♥ is",
-		renderer:    renderer,
-		content: func(w int, markdown func(p string) string) string {
+
+		content: func(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
 			foo := renderer.NewStyle().
-				Width(w / 2).
+				Width(s.Width / 2).
 				PaddingLeft(1).
 				PaddingRight(1).
 				Render("☀ Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
 
 			bar := renderer.NewStyle().
-				Width(w / 2).
+				Width(s.Width / 2).
 				PaddingLeft(1).
 				PaddingRight(1).
 				Render("☽ Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
@@ -33,7 +31,7 @@ func Home(
 
 			return strings.Join(
 				[]string{
-					markdown(`
+					md(`
 # Home
 
 I’m a software engineer from the UK, currently working as a _Senior Technical Lead_.
@@ -42,7 +40,7 @@ I live in the countryside with my beautiful partner, cats and dog.
 					`),
 					qux,
 					"\n",
-					markdown(`
+					md(`
 My day job consists mostly of _TypeScript_ and _Java_ on _Azure_.
 
 In my free time, I'm currently enjoying learning **Go** and dabbling in **Rust**.

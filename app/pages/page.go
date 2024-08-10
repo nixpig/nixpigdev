@@ -3,14 +3,41 @@ package pages
 import (
 	"fmt"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
+
+type ContentSize struct {
+	Width  int
+	Height int
+}
+
+type contentCallback func(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string
+
+type ActivePage int
+
+type mdrenderer func(md string) string
 
 type Page struct {
 	title       string
 	description string
-	content     func(w int, md func(p string) string) string
-	renderer    *lipgloss.Renderer
+	content     contentCallback
+}
+
+func (p Page) Init() tea.Cmd {
+	return nil
+}
+
+func (p Page) Update(msg tea.Msg) (tea.Msg, tea.Cmd) {
+	return nil, nil
+}
+
+func (p Page) View(
+	s ContentSize,
+	md mdrenderer,
+	renderer *lipgloss.Renderer,
+) string {
+	return p.content(s, md, renderer)
 }
 
 func (p Page) Title() string {
@@ -23,8 +50,4 @@ func (p Page) Description() string {
 
 func (p Page) FilterValue() string {
 	return fmt.Sprintf("%s %s", p.title, p.description)
-}
-
-func (p Page) Content(w int, md func(p string) string) string {
-	return p.renderer.NewStyle().Render(p.content(w, md))
 }

@@ -9,26 +9,25 @@ import (
 	"github.com/nixpig/nixpigdev/app/theme"
 )
 
-func Scrapbook(renderer *lipgloss.Renderer) Page {
+func Scrapbook() Page {
 	var scrapbook = Page{
 		title:       "Scrapbook",
-		description: "Notes, blogs, etc...",
-		renderer:    renderer,
-		content: func(w int, markdown func(p string) string) string {
+		description: "Notes, blogs, gists…",
+		content: func(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
 			tr, err := glamour.NewTermRenderer(
 				glamour.WithStylePath("dracula"),
-				glamour.WithWordWrap(w/2-2),
+				glamour.WithWordWrap(s.Width/2-2),
 			)
 			if err != nil {
 				return fmt.Sprintf("Failed to create term renderer: %s", err)
 			}
 
 			left := renderer.NewStyle().
-				Width(w / 2).
+				Width(s.Width / 2).
 				PaddingRight(1)
 
 			right := renderer.NewStyle().
-				Width(w / 2).
+				Width(s.Width / 2).
 				PaddingLeft(1)
 
 			container := renderer.NewStyle()
@@ -64,7 +63,7 @@ func Scrapbook(renderer *lipgloss.Renderer) Page {
 			)
 
 			return strings.Join([]string{
-				markdown("# Scrapbook"),
+				md("# Scrapbook"),
 				padded.Foreground(lipgloss.Color(theme.Dracula.Foreground)).Render("Just some stuff...\n"),
 				row,
 			}, "")

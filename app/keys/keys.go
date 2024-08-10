@@ -1,22 +1,22 @@
-package app
+package keys
 
 import "github.com/charmbracelet/bubbles/key"
 
 type keys struct {
-	quit key.Binding
-	up   key.Binding
-	down key.Binding
-	next key.Binding
-	prev key.Binding
+	Quit key.Binding
+	Up   key.Binding
+	Down key.Binding
+	Next key.Binding
+	Prev key.Binding
 }
 
 func (k keys) ShortHelp() []key.Binding {
 	return []key.Binding{
-		k.up,
-		k.down,
-		k.next,
-		k.prev,
-		k.quit,
+		k.Up,
+		k.Down,
+		k.Next,
+		k.Prev,
+		k.Quit,
 	}
 }
 
@@ -25,23 +25,23 @@ func (k keys) FullHelp() [][]key.Binding {
 }
 
 var InputKeys = keys{
-	quit: key.NewBinding(
+	Quit: key.NewBinding(
 		key.WithKeys("q", "esc", "ctrl+c"),
 		key.WithHelp("q/esc", "quit"),
 	),
-	up: key.NewBinding(
+	Up: key.NewBinding(
 		key.WithKeys("k", "up"),
 		key.WithHelp("⬆/k", "up"),
 	),
-	down: key.NewBinding(
+	Down: key.NewBinding(
 		key.WithKeys("j", "down"),
 		key.WithHelp("⬇/j", "down"),
 	),
-	next: key.NewBinding(
+	Next: key.NewBinding(
 		key.WithKeys("tab"),
 		key.WithHelp("tab", "next"),
 	),
-	prev: key.NewBinding(
+	Prev: key.NewBinding(
 		key.WithKeys("shift+tab"),
 		key.WithHelp("shift+tab", "prev"),
 	),
