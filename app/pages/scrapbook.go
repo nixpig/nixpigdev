@@ -12,9 +12,9 @@ import (
 func Scrapbook(renderer *lipgloss.Renderer) Page {
 	var scrapbook = Page{
 		title:       "Scrapbook",
-		description: "Notes, blogs, etc...",
+		description: "Notes, blogs, etc…",
 		renderer:    renderer,
-		content: func(w int, markdown func(p string) string) string {
+		content: func(w int, markdown mdrenderer) string {
 			tr, err := glamour.NewTermRenderer(
 				glamour.WithStylePath("dracula"),
 				glamour.WithWordWrap(w/2-2),

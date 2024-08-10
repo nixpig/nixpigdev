@@ -1,20 +1,26 @@
-package app
+package sections
 
 import (
 	"fmt"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/nixpigdev/app/keys"
 	"github.com/nixpig/nixpigdev/app/pages"
 	"github.com/nixpig/nixpigdev/app/theme"
 )
 
-type nav struct {
-	style lipgloss.Style
-	model list.Model
+type SelectIndex int
+
+type Nav struct {
+	style  lipgloss.Style
+	model  list.Model
+	Length int
 }
 
-func newNav(renderer *lipgloss.Renderer, contents []pages.Page) *nav {
+func NewNav(renderer *lipgloss.Renderer, contents []pages.Page) *Nav {
 	navStyle := renderer.NewStyle().
 		MarginTop(1).
 		PaddingRight(0)
@@ -79,12 +85,42 @@ func newNav(renderer *lipgloss.Renderer, contents []pages.Page) *nav {
 	initialModel.SetFilteringEnabled(false)
 	initialModel.SetShowStatusBar(false)
 
-	return &nav{
-		style: navStyle,
-		model: initialModel,
+	return &Nav{
+		style:  navStyle,
+		model:  initialModel,
+		Length: len(contents),
 	}
 }
 
-func (n *nav) view() string {
+func (n *Nav) View() string {
 	return n.style.Render(n.model.View())
+}
+
+func (n *Nav) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		n.model.SetWidth(msg.Width)
+		n.model.SetHeight(msg.Height)
+
+	case tea.KeyMsg:
+		switch {
+		case key.Matches(msg, keys.InputKeys.Next):
+			n.model.CursorDown()
+		case key.Matches(msg, keys.InputKeys.Prev):
+			n.model.CursorUp()
+		}
+
+	case SelectIndex:
+		n.model.Select(int(msg))
+	}
+
+	return nil, nil
+}
+
+func (n *Nav) Init() tea.Cmd {
+	return nil
+}
+
+func (n *Nav) Width() int {
+	return n.model.Width()
 }

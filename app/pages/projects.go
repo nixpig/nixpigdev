@@ -7,9 +7,9 @@ func Projects(
 ) Page {
 	var projects = Page{
 		title:       "Projects",
-		description: "OSS + personal work",
+		description: "OSS + personal projects",
 		renderer:    renderer,
-		content: func(w int, markdown func(p string) string) string {
+		content: func(w int, markdown mdrenderer) string {
 
 			return markdown(`
 # Projects

@@ -14,7 +14,7 @@ func Home(
 		title:       "Home",
 		description: "Where the ♥ is",
 		renderer:    renderer,
-		content: func(w int, markdown func(p string) string) string {
+		content: func(w int, markdown mdrenderer) string {
 			foo := renderer.NewStyle().
 				Width(w / 2).
 				PaddingLeft(1).

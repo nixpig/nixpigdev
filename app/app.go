@@ -7,26 +7,30 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/ssh"
+	"github.com/nixpig/nixpigdev/app/keys"
 	"github.com/nixpig/nixpigdev/app/pages"
+	"github.com/nixpig/nixpigdev/app/sections"
 )
 
 func New(pty ssh.Pty, renderer *lipgloss.Renderer) model {
+	ch := make(chan string)
 	var pages = []pages.Page{
 		pages.Home(renderer),
 		pages.Scrapbook(renderer),
 		pages.Projects(renderer),
 		pages.Uses(renderer),
 		pages.Resume(renderer),
-		pages.Contact(renderer),
+		pages.Contact(renderer, ch),
 	}
 
 	return model{
 		Term:    pty.Term,
 		Width:   pty.Window.Width,
 		Height:  pty.Window.Height,
-		Content: newContent(renderer, pages),
-		Nav:     newNav(renderer, pages),
-		Footer:  newFooter(renderer, InputKeys),
+		Content: sections.NewContent(renderer, pages),
+		Nav:     sections.NewNav(renderer, pages),
+		Footer:  sections.NewFooter(renderer, keys.InputKeys),
+		Ch:      ch,
 	}
 }
 
@@ -34,10 +38,11 @@ type model struct {
 	Term     string
 	Width    int
 	Height   int
-	Nav      *nav
-	Content  *content
-	Footer   *footer
+	Nav      *sections.Nav
+	Content  *sections.Content
+	Footer   *sections.Footer
 	Renderer *lipgloss.Renderer
+	Ch       chan string
 
 	ready      bool
 	activePage int
@@ -51,43 +56,47 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, InputKeys.quit):
+		case key.Matches(msg, keys.InputKeys.Quit):
 			return m, tea.Quit
 
-		case key.Matches(msg, InputKeys.down):
-			m.Content.model.LineDown(1)
-
-		case key.Matches(msg, InputKeys.up):
-			m.Content.model.LineUp(1)
-
-		case key.Matches(msg, InputKeys.next):
-			m.Nav.model.CursorDown()
-			if m.Nav.model.Index() != m.activePage {
-				m.Content.update(m.Nav.model.Index())
-				m.activePage = m.Nav.model.Index()
+		case key.Matches(msg, keys.InputKeys.Next):
+			if m.activePage == m.Nav.Length-1 {
+				m.activePage = 0
+			} else {
+				m.activePage++
 			}
+			m.Nav.Update(sections.SelectIndex(m.activePage))
+			m.Content.Update(pages.ActivePage(m.activePage))
 
-		case key.Matches(msg, InputKeys.prev):
-			m.Nav.model.CursorUp()
-			if m.Nav.model.Index() != m.activePage {
-				m.Content.update(m.Nav.model.Index())
-				m.activePage = m.Nav.model.Index()
+		case key.Matches(msg, keys.InputKeys.Prev):
+			if m.activePage == 0 {
+				m.activePage = m.Nav.Length - 1
+			} else {
+				m.activePage--
 			}
+			m.Nav.Update(sections.SelectIndex(m.activePage))
+			m.Content.Update(pages.ActivePage(m.activePage))
 		}
+
+		m.Content.Update(msg)
 
 	case tea.WindowSizeMsg:
 		m.ready = false
 
-		viewportHeight := msg.Height - m.Footer.style.GetHeight() - 2
+		viewportHeight := msg.Height - m.Footer.GetHeight() - 2
 
-		m.Nav.model.SetWidth(23)
-		m.Nav.model.SetHeight(viewportHeight)
+		m.Nav.Update(tea.WindowSizeMsg{
+			Width:  23,
+			Height: viewportHeight,
+		})
 
-		m.Content.model.Width = msg.Width - m.Nav.model.Width()
-		m.Content.model.Height = viewportHeight
+		m.Content.Update(tea.WindowSizeMsg{
+			Width:  msg.Width - m.Nav.Width(),
+			Height: viewportHeight,
+		})
 
 		// explicitly call update so that wordwrap is applied
-		m.Content.update(m.activePage)
+		m.Content.Update(pages.ActivePage(m.activePage))
 
 		m.ready = true
 	}
@@ -107,10 +116,10 @@ func (m model) View() string {
 			lipgloss.Left,
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
-				m.Nav.view(),
-				m.Content.view(),
+				m.Nav.View(),
+				m.Content.View(),
 			),
-			m.Footer.view(),
+			m.Footer.View(),
 		),
 	)
 

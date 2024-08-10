@@ -11,7 +11,7 @@ func Resume(renderer *lipgloss.Renderer) Page {
 		title:       "Resume",
 		description: "Skills + experience",
 		renderer:    renderer,
-		content: func(w int, markdown func(p string) string) string {
+		content: func(w int, markdown mdrenderer) string {
 			// tr, err := glamour.NewTermRenderer(
 			// 	glamour.WithStylePath("dracula"),
 			// 	glamour.WithWordWrap(w/2-2),
@@ -34,7 +34,7 @@ Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint 
 
 **HR + Payroll SaaS (2018 - Present)**
 
-- _Senior Technical Lead (2024 - Present)_
+- _Senior Technical Lead, IC (2024 - Present)_
 - _Senior Engineering Lead (2021 - 2024)_
 - _Senior Engineer (2018 - 2021)_
 
