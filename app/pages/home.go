@@ -4,23 +4,32 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/nixpigdev/app/theme"
 )
 
 func Home(
 	renderer *lipgloss.Renderer,
 ) Page {
-
 	var home = Page{
 		title:       "Home",
 		description: "Where the ♥ is",
 		renderer:    renderer,
 		content: func(w int, markdown func(p string) string) string {
-			foo := renderer.NewStyle().Width(w / 2).PaddingLeft(1).PaddingRight(1).Render("Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
-			bar := renderer.NewStyle().Width(w / 2).PaddingLeft(1).PaddingRight(1).Render("Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
+			foo := renderer.NewStyle().
+				Width(w / 2).
+				PaddingLeft(1).
+				PaddingRight(1).
+				Render("☀ Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
+
+			bar := renderer.NewStyle().
+				Width(w / 2).
+				PaddingLeft(1).
+				PaddingRight(1).
+				Render("☽ Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.")
 
 			baz := lipgloss.JoinHorizontal(lipgloss.Top, foo, bar)
 
-			qux := renderer.NewStyle().PaddingLeft(1).PaddingRight(1).Render(baz)
+			qux := renderer.NewStyle().Foreground(lipgloss.Color(theme.Dracula.Foreground)).PaddingLeft(1).PaddingRight(1).Render(baz)
 
 			return strings.Join(
 				[]string{
