@@ -35,6 +35,7 @@ func NewContent(renderer *lipgloss.Renderer, contents []pages.Page) *Content {
 }
 
 func (c *Content) Init() tea.Cmd {
+	c.contents[c.activePage].Init()
 	return nil
 }
 
@@ -64,19 +65,20 @@ func (c *Content) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			c.model.GotoTop()
 		}
 
-		_, cmd := c.contents[c.activePage].Update(msg)
-		return c, cmd
-
 	case pages.ActivePage:
 		c.model.GotoTop()
 		c.activePage = int(msg)
+		cmd := c.contents[c.activePage].Init()
+		return c, cmd
 
 	case tea.WindowSizeMsg:
 		c.model.Width = msg.Width
 		c.model.Height = msg.Height
 	}
 
-	return c, nil
+	_, pageCmd := c.contents[c.activePage].Update(msg)
+
+	return c, tea.Batch(pageCmd)
 }
 
 func (c *Content) md(plain string) string {
