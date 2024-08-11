@@ -2,6 +2,7 @@ package pages
 
 import (
 	"fmt"
+	"net/mail"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/cursor"
@@ -11,6 +12,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nixpig/nixpigdev/app/keys"
+	"github.com/nixpig/nixpigdev/app/theme"
 )
 
 type contact struct {
@@ -62,11 +64,12 @@ func (c *contact) FilterValue() string {
 var ()
 
 type form struct {
-	focusIndex int
-	inputs     []textinput.Model
-	cursorMode cursor.Mode
-	helpKeyMap help.KeyMap
-	helpModel  help.Model
+	focusIndex       int
+	inputs           []textinput.Model
+	cursorMode       cursor.Mode
+	helpKeyMap       help.KeyMap
+	helpModel        help.Model
+	validationErrors []string
 }
 
 func NewForm() form {
@@ -88,15 +91,17 @@ func NewForm() form {
 
 		switch i {
 		case 0:
-			t.Placeholder = "Name"
+			t.Prompt = "Name:    "
+			t.Placeholder = "janedoe"
 			t.Focus()
 		case 1:
-			t.Placeholder = "Email"
+			t.Prompt = "Email:   "
+			t.Placeholder = "jane@example.com"
 			t.CharLimit = 64
 		case 2:
-			t.Placeholder = "Message"
-			t.EchoMode = textinput.EchoPassword
-			t.EchoCharacter = '•'
+			t.Prompt = "Message: "
+			t.Placeholder = "Hi, there!"
+			t.CharLimit = 1024
 		}
 
 		m.inputs[i] = t
@@ -115,7 +120,18 @@ func (m *form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, keys.FormKeys.Enter):
 			if m.focusIndex == len(m.inputs) {
-				fmt.Println("submit form")
+				m.validationErrors = []string{}
+				if len(m.inputs[0].Value()) == 0 {
+					m.validationErrors = append(m.validationErrors, "name: no name provided")
+				}
+				if _, err := mail.ParseAddress(m.inputs[1].Value()); err != nil {
+					m.validationErrors = append(m.validationErrors, err.Error())
+				}
+				if len(m.inputs[2].Value()) == 0 {
+					m.validationErrors = append(m.validationErrors, "message: no message provided")
+				}
+
+				fmt.Println("validate and submit form")
 			} else {
 				m.focusIndex++
 			}
@@ -155,18 +171,34 @@ func (m *form) updateInputs(msg tea.Msg) tea.Cmd {
 }
 
 func (m *form) View(renderer *lipgloss.Renderer) string {
-	focusedStyle := renderer.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle := renderer.NewStyle().Foreground(lipgloss.Color("240"))
+	focusedStyle := renderer.NewStyle().Foreground(lipgloss.Color(theme.Dracula.Pink))
+	blurredStyle := renderer.NewStyle().Foreground(lipgloss.Color(theme.Dracula.Faint))
+	noStyle := renderer.NewStyle().Foreground(lipgloss.Color(theme.Dracula.Foreground))
 
 	focusedButton := focusedStyle.Render("[ Submit ]")
-	blurredButton := fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
+	blurredButton := fmt.Sprintf("%s %s %s", noStyle.Render("["), blurredStyle.Render("Submit"), noStyle.Render("]"))
 
 	var b strings.Builder
 
 	for i := range m.inputs {
+		if i == m.focusIndex {
+			m.inputs[i].Cursor.Style = focusedStyle
+			m.inputs[i].TextStyle = focusedStyle
+			m.inputs[i].PromptStyle = focusedStyle
+		} else {
+			m.inputs[i].TextStyle = noStyle
+			m.inputs[i].PromptStyle = noStyle
+		}
+		m.inputs[i].PlaceholderStyle = blurredStyle
 		b.WriteString(m.inputs[i].View())
 		if i < len(m.inputs)-1 {
 			b.WriteRune('\n')
+		}
+	}
+
+	if len(m.validationErrors) > 0 {
+		for _, e := range m.validationErrors {
+			b.WriteString(renderer.NewStyle().Foreground(lipgloss.Color(theme.Dracula.Red)).Render(fmt.Sprintf("\n⚠ %s", e)))
 		}
 	}
 
@@ -176,5 +208,5 @@ func (m *form) View(renderer *lipgloss.Renderer) string {
 	}
 	fmt.Fprintf(&b, "\n\n%s\n\n%s", *button, m.helpModel.View(m.helpKeyMap))
 
-	return b.String()
+	return renderer.NewStyle().PaddingLeft(2).PaddingRight(2).Render(b.String())
 }
