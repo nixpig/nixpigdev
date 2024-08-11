@@ -16,7 +16,7 @@ type SelectIndex int
 
 type Nav struct {
 	style  lipgloss.Style
-	model  list.Model
+	list   list.Model
 	Length int
 }
 
@@ -87,34 +87,34 @@ func NewNav(renderer *lipgloss.Renderer, contents []pages.Page) *Nav {
 
 	return &Nav{
 		style:  navStyle,
-		model:  initialModel,
+		list:   initialModel,
 		Length: len(contents),
 	}
 }
 
 func (n *Nav) View() string {
-	return n.style.Render(n.model.View())
+	return n.style.Render(n.list.View())
 }
 
 func (n *Nav) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		n.model.SetWidth(msg.Width)
-		n.model.SetHeight(msg.Height)
+		n.list.SetWidth(msg.Width)
+		n.list.SetHeight(msg.Height)
 
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.GlobalKeys.Next):
-			n.model.CursorDown()
+			n.list.CursorDown()
 		case key.Matches(msg, keys.GlobalKeys.Prev):
-			n.model.CursorUp()
+			n.list.CursorUp()
 		}
 
 	case SelectIndex:
-		n.model.Select(int(msg))
+		n.list.Select(int(msg))
 	}
 
-	return nil, nil
+	return n, nil
 }
 
 func (n *Nav) Init() tea.Cmd {
@@ -122,5 +122,5 @@ func (n *Nav) Init() tea.Cmd {
 }
 
 func (n *Nav) Width() int {
-	return n.model.Width()
+	return n.list.Width()
 }

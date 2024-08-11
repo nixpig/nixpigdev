@@ -8,7 +8,7 @@ import (
 
 type Footer struct {
 	style      lipgloss.Style
-	model      help.Model
+	help       help.Model
 	helpKeyMap help.KeyMap
 }
 
@@ -30,13 +30,13 @@ func NewFooter(renderer *lipgloss.Renderer, helpKeyMap help.KeyMap) *Footer {
 
 	return &Footer{
 		style:      footerStyle,
-		model:      initialModel,
+		help:       initialModel,
 		helpKeyMap: helpKeyMap,
 	}
 }
 
 func (f *Footer) View() string {
-	return f.style.Render(f.model.View(f.helpKeyMap))
+	return f.style.Render(f.help.View(f.helpKeyMap))
 }
 
 func (f *Footer) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

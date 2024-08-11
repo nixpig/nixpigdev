@@ -43,8 +43,8 @@ func (r *resume) View(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer)
 Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.
 
 ## Skills
-- Leading technical intiatives
 - Architectural design and hands-on coding
+- Leading technical intiatives
 
 ## Experience
 

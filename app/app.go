@@ -23,31 +23,33 @@ func New(pty ssh.Pty, renderer *lipgloss.Renderer) model {
 	}
 
 	return model{
-		Term:    pty.Term,
-		Width:   pty.Window.Width,
-		Height:  pty.Window.Height,
-		Content: sections.NewContent(renderer, pages),
-		Nav:     sections.NewNav(renderer, pages),
-		Footer:  sections.NewFooter(renderer, keys.GlobalKeys),
-		pages:   pages,
+		Term:         pty.Term,
+		Width:        pty.Window.Width,
+		Height:       pty.Window.Height,
+		ContentModel: sections.NewContent(renderer, pages),
+		NavModel:     sections.NewNav(renderer, pages),
+		FooterModel:  sections.NewFooter(renderer, keys.GlobalKeys),
+		pages:        pages,
 	}
 }
 
 type model struct {
-	Term     string
-	Width    int
-	Height   int
-	Nav      *sections.Nav
-	Content  *sections.Content
-	Footer   *sections.Footer
-	Renderer *lipgloss.Renderer
-	pages    []pages.Page
+	Term         string
+	Width        int
+	Height       int
+	NavModel     *sections.Nav
+	ContentModel *sections.Content
+	FooterModel  *sections.Footer
+	Renderer     *lipgloss.Renderer
+	pages        []pages.Page
 
 	ready      bool
 	activePage int
 }
 
 func (m model) Init() tea.Cmd {
+	m.ContentModel.Init()
+	m.NavModel.Init()
 	return nil
 }
 
@@ -59,52 +61,100 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case key.Matches(msg, keys.GlobalKeys.Next):
-			if m.activePage == m.Nav.Length-1 {
+			if m.activePage == m.NavModel.Length-1 {
 				m.activePage = 0
 			} else {
 				m.activePage++
 			}
 
-			_, navCmd := m.Nav.Update(sections.SelectIndex(m.activePage))
-			_, contentCmd := m.Content.Update(pages.ActivePage(m.activePage))
+			updatedNav, navCmd := m.NavModel.Update(sections.SelectIndex(m.activePage))
+			navModel, ok := updatedNav.(*sections.Nav)
+			if ok {
+				m.NavModel = navModel
+			}
+
+			updatedContent, contentCmd := m.ContentModel.Update(pages.ActivePage(m.activePage))
+			contentModel, ok := updatedContent.(*sections.Content)
+			if ok {
+				m.ContentModel = contentModel
+			}
+
 			return m, tea.Batch(navCmd, contentCmd)
 
 		case key.Matches(msg, keys.GlobalKeys.Prev):
 			if m.activePage == 0 {
-				m.activePage = m.Nav.Length - 1
+				m.activePage = m.NavModel.Length - 1
 			} else {
 				m.activePage--
 			}
 
-			_, navCmd := m.Nav.Update(sections.SelectIndex(m.activePage))
-			_, contentCmd := m.Content.Update(pages.ActivePage(m.activePage))
+			updatedNav, navCmd := m.NavModel.Update(sections.SelectIndex(m.activePage))
+			navModel, ok := updatedNav.(*sections.Nav)
+			if ok {
+				m.NavModel = navModel
+			}
+
+			updatedContent, contentCmd := m.ContentModel.Update(pages.ActivePage(m.activePage))
+			contentModel, ok := updatedContent.(*sections.Content)
+			if ok {
+				m.ContentModel = contentModel
+			}
+
 			return m, tea.Batch(navCmd, contentCmd)
 		}
 
-		m.Content.Update(msg)
+		m.ContentModel.Update(msg)
+		return m, nil
 
 	case tea.WindowSizeMsg:
 		m.ready = false
 
-		viewportHeight := msg.Height - m.Footer.Height() - 2
+		viewportHeight := msg.Height - m.FooterModel.Height() - 2
 
-		m.Nav.Update(tea.WindowSizeMsg{
+		updatedNav, navCmd := m.NavModel.Update(tea.WindowSizeMsg{
 			Width:  23,
 			Height: viewportHeight,
 		})
 
-		m.Content.Update(tea.WindowSizeMsg{
-			Width:  msg.Width - m.Nav.Width(),
+		navModel, ok := updatedNav.(*sections.Nav)
+		if ok {
+			m.NavModel = navModel
+		}
+
+		updatedContentSize, contentSizeCmd := m.ContentModel.Update(tea.WindowSizeMsg{
+			Width:  msg.Width - m.NavModel.Width(),
 			Height: viewportHeight,
 		})
+		contentSizeModel, ok := updatedContentSize.(*sections.Content)
+		if ok {
+			m.ContentModel = contentSizeModel
+		}
 
 		// explicitly call update so that wordwrap is applied
-		m.Content.Update(pages.ActivePage(m.activePage))
+		updatedContentActive, contentActiveCmd := m.ContentModel.Update(pages.ActivePage(m.activePage))
+		contentActiveModel, ok := updatedContentActive.(*sections.Content)
+		if ok {
+			m.ContentModel = contentActiveModel
+		}
 
 		m.ready = true
+
+		return m, tea.Sequence(navCmd, contentSizeCmd, contentActiveCmd)
 	}
 
-	return m, nil
+	updatedNav, navCmd := m.NavModel.Update(msg)
+	navModel, ok := updatedNav.(*sections.Nav)
+	if ok {
+		m.NavModel = navModel
+	}
+
+	updatedContent, contentCmd := m.ContentModel.Update(msg)
+	contentModel, ok := updatedContent.(*sections.Content)
+	if ok {
+		m.ContentModel = contentModel
+	}
+
+	return m, tea.Batch(navCmd, contentCmd)
 }
 
 func (m model) View() string {
@@ -119,10 +169,10 @@ func (m model) View() string {
 			lipgloss.Left,
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
-				m.Nav.View(),
-				m.Content.View(),
+				m.NavModel.View(),
+				m.ContentModel.View(),
 			),
-			m.Footer.View(),
+			m.FooterModel.View(),
 		),
 	)
 

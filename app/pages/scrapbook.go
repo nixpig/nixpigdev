@@ -7,13 +7,24 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mmcdole/gofeed"
 	"github.com/nixpig/nixpigdev/app/theme"
 )
+
+type blogPostsMsg *gofeed.Feed
+
+type blogItem struct {
+	title string
+	link  string
+}
 
 type scrapbook struct {
 	title       string
 	description string
+	blogItems   []blogItem
 }
+
+var fp = gofeed.NewParser()
 
 var Scrapbook = scrapbook{
 	title:       "Scrapbook",
@@ -21,10 +32,21 @@ var Scrapbook = scrapbook{
 }
 
 func (sb *scrapbook) Init() tea.Cmd {
-	return nil
+	return sb.getBlogPosts
 }
 
 func (sb *scrapbook) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case blogPostsMsg:
+		sb.blogItems = []blogItem{}
+		for _, item := range msg.Items {
+			sb.blogItems = append(sb.blogItems, blogItem{
+				title: item.Title,
+				link:  item.GUID,
+			})
+		}
+
+	}
 	return nil, nil
 }
 
@@ -37,45 +59,23 @@ func (sb *scrapbook) View(s ContentSize, md mdrenderer, renderer *lipgloss.Rende
 		return fmt.Sprintf("Failed to create term renderer: %s", err)
 	}
 
-	left := renderer.NewStyle().
-		Width(s.Width / 2).
-		PaddingRight(1)
-
-	right := renderer.NewStyle().
-		Width(s.Width / 2).
-		PaddingLeft(1)
-
 	container := renderer.NewStyle()
 	padded := renderer.NewStyle().
 		PaddingLeft(2).
 		PaddingRight(2)
 
-	g, err := tr.Render(`## Recent gists
+	blogs := strings.Builder{}
 
-- [name of gist](https://gist.com/b6222)
-- [name of gist](https://gist.com/b6222)
-- [name of gist](https://gist.com/b6222)
-- [name of gist](https://gist.com/b6222)
-- [name of gist](https://gist.com/b6222)
-			`)
-	if err != nil {
-		return fmt.Sprintf("failed to render recent commits: %s", err)
+	for _, item := range sb.blogItems {
+		blogs.WriteString(fmt.Sprintf("- [%s](%s)", item.title, item.link))
 	}
-	gists := left.Render(g)
 
-	b, err := tr.Render("## Recent blogs")
+	b, err := tr.Render(fmt.Sprintf("## Recent blogs\n%s", blogs.String()))
 	if err != nil {
 		return fmt.Sprintf("failed to render recent blogs: %s", err)
 	}
-	blogs := right.Render(b)
 
-	row := container.Render(
-		lipgloss.JoinHorizontal(
-			lipgloss.Top,
-			gists,
-			blogs,
-		),
-	)
+	row := container.Render(b)
 
 	return strings.Join([]string{
 		md("# Scrapbook"),
@@ -94,4 +94,10 @@ func (sb *scrapbook) Description() string {
 
 func (sb *scrapbook) FilterValue() string {
 	return fmt.Sprintf("%s %s", sb.title, sb.description)
+}
+
+func (sb *scrapbook) getBlogPosts() tea.Msg {
+	fetched, _ := fp.ParseURL("https://medium.com/feed/@nixpig")
+
+	return blogPostsMsg(fetched)
 }
