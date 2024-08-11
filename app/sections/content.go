@@ -67,6 +67,7 @@ func (c *Content) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return c, cmd
 
 	case pages.ActivePage:
+		c.model.GotoTop()
 		c.activePage = int(msg)
 
 	case tea.WindowSizeMsg:
