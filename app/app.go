@@ -23,6 +23,9 @@ func New(pty ssh.Pty, renderer *lipgloss.Renderer) model {
 	}
 
 	return model{
+		Term:    pty.Term,
+		Width:   pty.Window.Width,
+		Height:  pty.Window.Height,
 		Content: sections.NewContent(renderer, pages),
 		Nav:     sections.NewNav(renderer, pages),
 		Footer:  sections.NewFooter(renderer, keys.GlobalKeys),
@@ -32,6 +35,8 @@ func New(pty ssh.Pty, renderer *lipgloss.Renderer) model {
 
 type model struct {
 	Term     string
+	Width    int
+	Height   int
 	Nav      *sections.Nav
 	Content  *sections.Content
 	Footer   *sections.Footer
