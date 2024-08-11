@@ -21,7 +21,7 @@ func (u *uses) Init() tea.Cmd {
 	return nil
 }
 
-func (u *uses) Update(msg tea.Msg) (tea.Msg, tea.Cmd) {
+func (u *uses) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return nil, nil
 }
 

@@ -38,46 +38,43 @@ func (c *Content) Init() tea.Cmd {
 }
 
 func (c *Content) View() string {
-	return c.style.Render(c.model.View())
+	c.model.SetContent(
+		c.contents[c.activePage].View(
+			pages.ContentSize{
+				Width:  c.model.Width,
+				Height: c.model.Height,
+			},
+			c.md,
+			c.renderer,
+		),
+	)
+	return c.model.View()
 }
 
 func (c *Content) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, keys.InputKeys.Down):
+		case key.Matches(msg, keys.GlobalKeys.Down):
 			c.model.LineDown(1)
-		case key.Matches(msg, keys.InputKeys.Up):
+		case key.Matches(msg, keys.GlobalKeys.Up):
 			c.model.LineUp(1)
-		case key.Matches(msg, keys.InputKeys.Next), key.Matches(msg, keys.InputKeys.Prev):
+		case key.Matches(msg, keys.GlobalKeys.Next), key.Matches(msg, keys.GlobalKeys.Prev):
 			c.model.GotoTop()
 		}
 
-		_, cmd = c.contents[c.activePage].Update(msg)
+		_, cmd := c.contents[c.activePage].Update(msg)
+		return c, cmd
 
 	case pages.ActivePage:
 		c.activePage = int(msg)
-		c.model.SetContent(
-			c.style.Render(
-				c.contents[c.activePage].View(
-					pages.ContentSize{
-						Width:  c.model.Width,
-						Height: c.model.Height,
-					},
-					c.md,
-					c.renderer,
-				),
-			),
-		)
 
 	case tea.WindowSizeMsg:
 		c.model.Width = msg.Width
 		c.model.Height = msg.Height
 	}
 
-	return c, cmd
+	return c, nil
 }
 
 func (c *Content) md(plain string) string {

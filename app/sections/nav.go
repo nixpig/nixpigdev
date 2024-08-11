@@ -104,9 +104,9 @@ func (n *Nav) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, keys.InputKeys.Next):
+		case key.Matches(msg, keys.GlobalKeys.Next):
 			n.model.CursorDown()
-		case key.Matches(msg, keys.InputKeys.Prev):
+		case key.Matches(msg, keys.GlobalKeys.Prev):
 			n.model.CursorUp()
 		}
 

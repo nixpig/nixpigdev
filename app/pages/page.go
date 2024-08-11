@@ -18,7 +18,7 @@ type mdrenderer func(md string) string
 
 type Page interface {
 	Init() tea.Cmd
-	Update(msg tea.Msg) (tea.Msg, tea.Cmd)
+	Update(msg tea.Msg) (tea.Model, tea.Cmd)
 	View(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string
 	Title() string
 	Description() string

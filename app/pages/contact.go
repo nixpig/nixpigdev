@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/cursor"
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -28,9 +29,9 @@ func (c *contact) Init() tea.Cmd {
 	return nil
 }
 
-func (c *contact) Update(msg tea.Msg) (tea.Msg, tea.Cmd) {
-	m, cmd := c.form.Update(msg)
-	return m, cmd
+func (c *contact) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	_, cmd := c.form.Update(msg)
+	return nil, cmd
 }
 
 func (c *contact) View(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
@@ -74,11 +75,20 @@ type form struct {
 	focusIndex int
 	inputs     []textinput.Model
 	cursorMode cursor.Mode
+	helpKeyMap help.KeyMap
+	helpModel  help.Model
 }
 
 func NewForm() form {
+	helpModel := help.New()
+	helpModel.ShortSeparator = " • "
+	helpModel.Styles.ShortKey = lipgloss.NewStyle().Bold(true)
+	helpModel.Styles.ShortDesc = lipgloss.NewStyle().Faint(true)
+
 	m := form{
-		inputs: make([]textinput.Model, 3),
+		inputs:     make([]textinput.Model, 3),
+		helpKeyMap: keys.FormKeys,
+		helpModel:  helpModel,
 	}
 
 	var t textinput.Model
@@ -116,54 +126,49 @@ func (m *form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case msg.String() == "tab":
-			m.focusIndex++
-
-		case key.Matches(msg, keys.InputKeys.Next):
-			m.focusIndex++
-
-		case key.Matches(msg, keys.InputKeys.Prev):
-			m.focusIndex--
-
-		}
-
-	default:
-		cmds := make([]tea.Cmd, len(m.inputs))
-		for i := 0; i <= len(m.inputs)-1; i++ {
-			if i == m.focusIndex {
-				fmt.Println("focus this one: ", i)
-				// Set focused state
-				cmds[i] = m.inputs[i].Focus()
-				m.inputs[i].PromptStyle = focusedStyle
-				m.inputs[i].TextStyle = focusedStyle
-				continue
+		case key.Matches(msg, keys.FormKeys.Enter):
+			if m.focusIndex == len(m.inputs) {
+				fmt.Println("submit form")
+			} else {
+				m.focusIndex++
 			}
-			// Remove focused state
-			m.inputs[i].Blur()
-			m.inputs[i].PromptStyle = noStyle
-			m.inputs[i].TextStyle = noStyle
+
+		case key.Matches(msg, keys.FormKeys.Next):
+			if m.focusIndex < len(m.inputs) {
+				m.focusIndex++
+			}
+
+		case key.Matches(msg, keys.FormKeys.Prev):
+			if m.focusIndex > 0 {
+				m.focusIndex--
+			}
 		}
-
-		return m, tea.Batch(cmds...)
-
 	}
 
-	// Handle character input and blinking
-	cmd := m.updateInputs(msg)
+	m.updateInputs(msg)
 
-	return m, cmd
+	return m, nil
 }
 
 func (m *form) updateInputs(msg tea.Msg) tea.Cmd {
-	cmds := make([]tea.Cmd, len(m.inputs))
+	for i := 0; i <= len(m.inputs)-1; i++ {
+		if i == m.focusIndex {
+			m.inputs[i].Focus()
+			m.inputs[i].PromptStyle = focusedStyle
+			m.inputs[i].TextStyle = focusedStyle
+			continue
+		}
 
-	// Only text inputs with Focus() set will respond, so it's safe to simply
-	// update all of them here without any further logic.
-	for i := range m.inputs {
-		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
+		m.inputs[i].Blur()
+		m.inputs[i].PromptStyle = noStyle
+		m.inputs[i].TextStyle = noStyle
 	}
 
-	return tea.Batch(cmds...)
+	for i := range m.inputs {
+		m.inputs[i], _ = m.inputs[i].Update(msg)
+	}
+
+	return nil
 }
 
 func (m *form) View() string {
@@ -180,7 +185,7 @@ func (m *form) View() string {
 	if m.focusIndex == len(m.inputs) {
 		button = &focusedButton
 	}
-	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
+	fmt.Fprintf(&b, "\n\n%s\n\n%s", *button, m.helpModel.View(m.helpKeyMap))
 
 	return b.String()
 }
