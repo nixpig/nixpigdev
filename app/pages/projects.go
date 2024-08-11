@@ -1,14 +1,32 @@
 package pages
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"fmt"
 
-func Projects() Page {
-	var projects = Page{
-		title:       "Projects",
-		description: "OSS + personal projects",
-		content: func(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
 
-			return md(`
+type projects struct {
+	title       string
+	description string
+}
+
+var Projects = projects{
+	title:       "Projects",
+	description: "OSS + personal projects",
+}
+
+func (p *projects) Init() tea.Cmd {
+	return nil
+}
+
+func (p *projects) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return nil, nil
+}
+
+func (p *projects) View(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
+	return md(`
 # Projects
 
 [syringe.sh](https://github.com/nixpig/syringe.sh) • _Go_
@@ -23,8 +41,16 @@ Super-simple to configure HTTP/S reverse proxy for local dev; supports HTTP/1.1,
 
 Batch executor for HTTP requests configured in a simple YAML schema.
 			`)
-		},
-	}
+}
 
-	return projects
+func (p *projects) Title() string {
+	return p.title
+}
+
+func (p *projects) Description() string {
+	return p.description
+}
+
+func (p *projects) FilterValue() string {
+	return fmt.Sprintf("%s %s", p.title, p.description)
 }

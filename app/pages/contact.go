@@ -5,30 +5,58 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/cursor"
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/nixpigdev/app/keys"
 )
 
-func Contact() Page {
-	var contact = Page{
-		title:       "Contact",
-		description: "Come say hi!",
-		content: func(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
-			return strings.Join([]string{
-				md(`
+type contact struct {
+	title       string
+	description string
+	form        form
+}
+
+var Contact = contact{
+	title:       "Contact",
+	description: "Come say hi!",
+	form:        NewForm(),
+}
+
+func (c *contact) Init() tea.Cmd {
+	return nil
+}
+
+func (c *contact) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	_, cmd := c.form.Update(msg)
+	return nil, cmd
+}
+
+func (c *contact) View(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
+	return strings.Join([]string{
+		md(`
 # Contact
 
 Feel free to reach out and say "Hi!"
 
 **✉ Email:** [hi@nixpig.dev](mailto:hi@nixpig.dev)`),
 
-				initialModel().View(),
-			}, "")
-		},
-	}
+		c.form.View(),
+	}, "")
+}
 
-	return contact
+func (c *contact) Title() string {
+	return c.title
+}
+
+func (c *contact) Description() string {
+	return c.description
+}
+
+func (c *contact) FilterValue() string {
+	return fmt.Sprintf("%s %s", c.title, c.description)
 }
 
 var (
@@ -43,15 +71,24 @@ var (
 	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
 )
 
-type model struct {
+type form struct {
 	focusIndex int
 	inputs     []textinput.Model
 	cursorMode cursor.Mode
+	helpKeyMap help.KeyMap
+	helpModel  help.Model
 }
 
-func initialModel() model {
-	m := model{
-		inputs: make([]textinput.Model, 3),
+func NewForm() form {
+	helpModel := help.New()
+	helpModel.ShortSeparator = " • "
+	helpModel.Styles.ShortKey = lipgloss.NewStyle().Bold(true)
+	helpModel.Styles.ShortDesc = lipgloss.NewStyle().Faint(true)
+
+	m := form{
+		inputs:     make([]textinput.Model, 3),
+		helpKeyMap: keys.FormKeys,
+		helpModel:  helpModel,
 	}
 
 	var t textinput.Model
@@ -81,78 +118,60 @@ func initialModel() model {
 	return m
 }
 
-func (m model) Init() tea.Cmd {
+func (m *form) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "esc":
-			return m, tea.Quit
-
-		// Set focus to next input
-		case "tab", "shift+tab", "enter", "up", "down":
-			s := msg.String()
-
-			// Did the user press enter while the submit button was focused?
-			// If so, exit.
-			if s == "enter" && m.focusIndex == len(m.inputs) {
-				return m, tea.Quit
-			}
-
-			// Cycle indexes
-			if s == "up" || s == "shift+tab" {
-				m.focusIndex--
+		switch {
+		case key.Matches(msg, keys.FormKeys.Enter):
+			if m.focusIndex == len(m.inputs) {
+				fmt.Println("submit form")
 			} else {
 				m.focusIndex++
 			}
 
-			if m.focusIndex > len(m.inputs) {
-				m.focusIndex = 0
-			} else if m.focusIndex < 0 {
-				m.focusIndex = len(m.inputs)
+		case key.Matches(msg, keys.FormKeys.Next):
+			if m.focusIndex < len(m.inputs) {
+				m.focusIndex++
 			}
 
-			cmds := make([]tea.Cmd, len(m.inputs))
-			for i := 0; i <= len(m.inputs)-1; i++ {
-				if i == m.focusIndex {
-					// Set focused state
-					cmds[i] = m.inputs[i].Focus()
-					m.inputs[i].PromptStyle = focusedStyle
-					m.inputs[i].TextStyle = focusedStyle
-					continue
-				}
-				// Remove focused state
-				m.inputs[i].Blur()
-				m.inputs[i].PromptStyle = noStyle
-				m.inputs[i].TextStyle = noStyle
+		case key.Matches(msg, keys.FormKeys.Prev):
+			if m.focusIndex > 0 {
+				m.focusIndex--
 			}
-
-			return m, tea.Batch(cmds...)
 		}
 	}
 
-	// Handle character input and blinking
-	cmd := m.updateInputs(msg)
+	m.updateInputs(msg)
 
-	return m, cmd
+	return m, nil
 }
 
-func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
-	cmds := make([]tea.Cmd, len(m.inputs))
+func (m *form) updateInputs(msg tea.Msg) tea.Cmd {
+	for i := 0; i <= len(m.inputs)-1; i++ {
+		if i == m.focusIndex {
+			m.inputs[i].Focus()
+			m.inputs[i].PromptStyle = focusedStyle
+			m.inputs[i].TextStyle = focusedStyle
+			continue
+		}
 
-	// Only text inputs with Focus() set will respond, so it's safe to simply
-	// update all of them here without any further logic.
-	for i := range m.inputs {
-		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
+		m.inputs[i].Blur()
+		m.inputs[i].PromptStyle = noStyle
+		m.inputs[i].TextStyle = noStyle
 	}
 
-	return tea.Batch(cmds...)
+	for i := range m.inputs {
+		m.inputs[i], _ = m.inputs[i].Update(msg)
+	}
+
+	return nil
 }
 
-func (m model) View() string {
+func (m *form) View() string {
 	var b strings.Builder
 
 	for i := range m.inputs {
@@ -166,7 +185,7 @@ func (m model) View() string {
 	if m.focusIndex == len(m.inputs) {
 		button = &focusedButton
 	}
-	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
+	fmt.Fprintf(&b, "\n\n%s\n\n%s", *button, m.helpModel.View(m.helpKeyMap))
 
 	return b.String()
 }

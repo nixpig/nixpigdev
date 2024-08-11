@@ -2,7 +2,7 @@ package keys
 
 import "github.com/charmbracelet/bubbles/key"
 
-type keys struct {
+type globalKeys struct {
 	Quit key.Binding
 	Up   key.Binding
 	Down key.Binding
@@ -10,21 +10,21 @@ type keys struct {
 	Prev key.Binding
 }
 
-func (k keys) ShortHelp() []key.Binding {
+func (gk globalKeys) ShortHelp() []key.Binding {
 	return []key.Binding{
-		k.Up,
-		k.Down,
-		k.Next,
-		k.Prev,
-		k.Quit,
+		gk.Up,
+		gk.Down,
+		gk.Next,
+		gk.Prev,
+		gk.Quit,
 	}
 }
 
-func (k keys) FullHelp() [][]key.Binding {
-	return [][]key.Binding{k.ShortHelp()}
+func (gk globalKeys) FullHelp() [][]key.Binding {
+	return [][]key.Binding{gk.ShortHelp()}
 }
 
-var InputKeys = keys{
+var GlobalKeys = globalKeys{
 	Quit: key.NewBinding(
 		key.WithKeys("q", "esc", "ctrl+c"),
 		key.WithHelp("q/esc", "quit"),
@@ -44,5 +44,38 @@ var InputKeys = keys{
 	Prev: key.NewBinding(
 		key.WithKeys("shift+tab"),
 		key.WithHelp("shift+tab", "prev"),
+	),
+}
+
+type formKeys struct {
+	Enter key.Binding
+	Next  key.Binding
+	Prev  key.Binding
+}
+
+func (fk formKeys) ShortHelp() []key.Binding {
+	return []key.Binding{
+		fk.Enter,
+		fk.Next,
+		fk.Prev,
+	}
+}
+
+func (fk formKeys) FullHelp() [][]key.Binding {
+	return [][]key.Binding{}
+}
+
+var FormKeys = formKeys{
+	Enter: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "submit"),
+	),
+	Next: key.NewBinding(
+		key.WithKeys("down"),
+		key.WithHelp("⬇", "next"),
+	),
+	Prev: key.NewBinding(
+		key.WithKeys("up"),
+		key.WithHelp("⬆", "prev"),
 	),
 }

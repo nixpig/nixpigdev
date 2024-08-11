@@ -1,13 +1,32 @@
 package pages
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"fmt"
 
-func Uses() Page {
-	var uses = Page{
-		title:       "Uses",
-		description: "Tools of the trade",
-		content: func(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
-			return md(`
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+type uses struct {
+	title       string
+	description string
+}
+
+var Uses = uses{
+	title:       "Uses",
+	description: "Tools of the trade",
+}
+
+func (u *uses) Init() tea.Cmd {
+	return nil
+}
+
+func (u *uses) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return nil, nil
+}
+
+func (u *uses) View(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
+	return md(`
 # Uses
 
 I'm a simple person, with simple needs. I spend most of my time in the terminal, and my setup is built around being able to work in that environment (somewhat) efficiently.
@@ -36,8 +55,16 @@ I'm a simple person, with simple needs. I spend most of my time in the terminal,
 - **Headset:** [JBL Quantum 810](https://uk.jbl.com/gaming-headsets/JBLQ810WLBLK.html)
 
 			`)
-		},
-	}
+}
 
-	return uses
+func (u *uses) Title() string {
+	return u.title
+}
+
+func (u *uses) Description() string {
+	return u.description
+}
+
+func (u *uses) FilterValue() string {
+	return fmt.Sprintf("%s %s", u.title, u.description)
 }

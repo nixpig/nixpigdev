@@ -14,18 +14,19 @@ import (
 
 func New(pty ssh.Pty, renderer *lipgloss.Renderer) model {
 	var pages = []pages.Page{
-		pages.Home(),
-		pages.Scrapbook(),
-		pages.Projects(),
-		pages.Uses(),
-		pages.Resume(),
-		pages.Contact(),
+		&pages.Home,
+		&pages.Scrapbook,
+		&pages.Projects,
+		&pages.Resume,
+		&pages.Uses,
+		&pages.Contact,
 	}
 
 	return model{
 		Content: sections.NewContent(renderer, pages),
 		Nav:     sections.NewNav(renderer, pages),
-		Footer:  sections.NewFooter(renderer, keys.InputKeys),
+		Footer:  sections.NewFooter(renderer, keys.GlobalKeys),
+		pages:   pages,
 	}
 }
 
@@ -35,6 +36,7 @@ type model struct {
 	Content  *sections.Content
 	Footer   *sections.Footer
 	Renderer *lipgloss.Renderer
+	pages    []pages.Page
 
 	ready      bool
 	activePage int
@@ -48,27 +50,30 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, keys.InputKeys.Quit):
+		case key.Matches(msg, keys.GlobalKeys.Quit):
 			return m, tea.Quit
 
-		case key.Matches(msg, keys.InputKeys.Next):
+		case key.Matches(msg, keys.GlobalKeys.Next):
 			if m.activePage == m.Nav.Length-1 {
 				m.activePage = 0
 			} else {
 				m.activePage++
 			}
-			m.Nav.Update(sections.SelectIndex(m.activePage))
-			m.Content.Update(pages.ActivePage(m.activePage))
 
-		case key.Matches(msg, keys.InputKeys.Prev):
+			_, navCmd := m.Nav.Update(sections.SelectIndex(m.activePage))
+			_, contentCmd := m.Content.Update(pages.ActivePage(m.activePage))
+			return m, tea.Batch(navCmd, contentCmd)
+
+		case key.Matches(msg, keys.GlobalKeys.Prev):
 			if m.activePage == 0 {
 				m.activePage = m.Nav.Length - 1
 			} else {
 				m.activePage--
 			}
-			m.Nav.Update(sections.SelectIndex(m.activePage))
-			m.Content.Update(pages.ActivePage(m.activePage))
 
+			_, navCmd := m.Nav.Update(sections.SelectIndex(m.activePage))
+			_, contentCmd := m.Content.Update(pages.ActivePage(m.activePage))
+			return m, tea.Batch(navCmd, contentCmd)
 		}
 
 		m.Content.Update(msg)

@@ -1,26 +1,43 @@
 package pages
 
 import (
+	"fmt"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-func Resume() Page {
-	var resume = Page{
-		title:       "Resume",
-		description: "Skills + experience",
-		content: func(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
-			// tr, err := glamour.NewTermRenderer(
-			// 	glamour.WithStylePath("dracula"),
-			// 	glamour.WithWordWrap(w/2-2),
-			// )
-			// if err != nil {
-			// 	return fmt.Sprintf("failed to create term renderer: %s", err)
-			// }
+type resume struct {
+	title       string
+	description string
+}
 
-			return strings.Join([]string{
-				md(`
+var Resume = resume{
+	title:       "Resume",
+	description: "Skills + experience",
+}
+
+func (r *resume) Init() tea.Cmd {
+	return nil
+}
+
+func (r *resume) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return nil, nil
+}
+
+func (r *resume) View(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
+
+	// tr, err := glamour.NewTermRenderer(
+	// 	glamour.WithStylePath("dracula"),
+	// 	glamour.WithWordWrap(w/2-2),
+	// )
+	// if err != nil {
+	// 	return fmt.Sprintf("failed to create term renderer: %s", err)
+	// }
+
+	return strings.Join([]string{
+		md(`
 # Résumé
 
 Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.
@@ -51,9 +68,17 @@ Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint 
 
 **College (2011 - 2012)** - _ICT_
 				`),
-			}, "")
-		},
-	}
+	}, "")
+}
 
-	return resume
+func (r *resume) Title() string {
+	return r.title
+}
+
+func (r *resume) Description() string {
+	return r.description
+}
+
+func (r *resume) FilterValue() string {
+	return fmt.Sprintf("%s %s", r.title, r.description)
 }
