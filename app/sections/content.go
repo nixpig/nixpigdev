@@ -28,6 +28,7 @@ func NewContent(renderer *lipgloss.Renderer, contents []pages.Page) *Content {
 		style:    contentStyle,
 		model:    initialModel,
 		contents: contents,
+		renderer: renderer,
 	}
 
 	return c
