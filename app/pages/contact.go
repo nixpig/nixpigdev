@@ -43,7 +43,7 @@ Feel free to reach out and say "Hi!"
 
 **✉ Email:** [hi@nixpig.dev](mailto:hi@nixpig.dev)`),
 
-		c.form.View(),
+		c.form.View(renderer),
 	}, "")
 }
 
@@ -59,17 +59,7 @@ func (c *contact) FilterValue() string {
 	return fmt.Sprintf("%s %s", c.title, c.description)
 }
 
-var (
-	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	cursorStyle         = focusedStyle
-	noStyle             = lipgloss.NewStyle()
-	helpStyle           = blurredStyle
-	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
-
-	focusedButton = focusedStyle.Render("[ Submit ]")
-	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
-)
+var ()
 
 type form struct {
 	focusIndex int
@@ -94,15 +84,12 @@ func NewForm() form {
 	var t textinput.Model
 	for i := range m.inputs {
 		t = textinput.New()
-		t.Cursor.Style = cursorStyle
 		t.CharLimit = 32
 
 		switch i {
 		case 0:
 			t.Placeholder = "Name"
 			t.Focus()
-			t.PromptStyle = focusedStyle
-			t.TextStyle = focusedStyle
 		case 1:
 			t.Placeholder = "Email"
 			t.CharLimit = 64
@@ -147,21 +134,17 @@ func (m *form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	m.updateInputs(msg)
 
-	return m, nil
+	return nil, nil
 }
 
 func (m *form) updateInputs(msg tea.Msg) tea.Cmd {
 	for i := 0; i <= len(m.inputs)-1; i++ {
 		if i == m.focusIndex {
 			m.inputs[i].Focus()
-			m.inputs[i].PromptStyle = focusedStyle
-			m.inputs[i].TextStyle = focusedStyle
 			continue
 		}
 
 		m.inputs[i].Blur()
-		m.inputs[i].PromptStyle = noStyle
-		m.inputs[i].TextStyle = noStyle
 	}
 
 	for i := range m.inputs {
@@ -171,7 +154,13 @@ func (m *form) updateInputs(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-func (m *form) View() string {
+func (m *form) View(renderer *lipgloss.Renderer) string {
+	focusedStyle := renderer.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle := renderer.NewStyle().Foreground(lipgloss.Color("240"))
+
+	focusedButton := focusedStyle.Render("[ Submit ]")
+	blurredButton := fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
+
 	var b strings.Builder
 
 	for i := range m.inputs {
