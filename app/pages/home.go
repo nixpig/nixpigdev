@@ -6,15 +6,17 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/nixpigdev/app/commands"
 	"github.com/nixpig/nixpigdev/app/theme"
 )
 
 type homeModel struct {
-	style       lipgloss.Style
-	title       string
-	description string
-	renderer    *lipgloss.Renderer
-	md          mdrenderer
+	style        lipgloss.Style
+	title        string
+	description  string
+	renderer     *lipgloss.Renderer
+	md           mdrenderer
+	contentWidth int
 }
 
 func NewHome(
@@ -39,13 +41,13 @@ func (h homeModel) Init() tea.Cmd {
 
 func (h homeModel) View() string {
 	work := h.renderer.NewStyle().
-		Width(h.style.GetWidth() / 2).
+		Width(h.contentWidth / 2).
 		PaddingLeft(1).
 		PaddingRight(1).
 		Render("My day job consists mostly of TypeScript and Java on Azure.")
 
 	bar := h.renderer.NewStyle().
-		Width(h.style.GetWidth() / 2).
+		Width(h.contentWidth / 2).
 		PaddingLeft(1).
 		PaddingRight(1).
 		Render("In my free time, I'm currently enjoying learning Go and dabbling in Rust.")
@@ -60,7 +62,7 @@ func (h homeModel) View() string {
 # Home
 
 I’m a software engineer from the UK, currently working as a _Senior Technical Lead_.
-			`, h.style.GetWidth()),
+			`, h.contentWidth),
 
 			qux,
 			"\n",
@@ -70,7 +72,7 @@ I live in the countryside with my beautiful partner, cats and dog, and enjoy goi
 **Fun facts**
 - My day starts at 03:00am every morning.
 - I collect Toy Story Alien memorabilia.
-			`, h.style.GetWidth()),
+			`, h.contentWidth),
 			"\n",
 		}, "")
 }
@@ -78,7 +80,9 @@ I live in the countryside with my beautiful partner, cats and dog, and enjoy goi
 func (h homeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		h.style.Width(msg.Width)
+		h.contentWidth = msg.Width
+	case commands.SetContentWidth:
+		h.contentWidth = int(msg)
 	}
 
 	return h, nil

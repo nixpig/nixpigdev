@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -53,7 +54,7 @@ func New(pty ssh.Pty, renderer *lipgloss.Renderer) appModel {
 		// pages.NewScrapbook(renderer, md),
 		// pages.NewProjects(renderer, md),
 		// pages.NewResume(renderer, md),
-		// pages.NewUses(renderer, md),
+		pages.NewUses(renderer, md),
 		// pages.NewContact(renderer, md),
 	}
 
@@ -110,10 +111,13 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.contentModel = updatedContent
 
 			return m, tea.Batch(navCmd, contentCmd)
-		}
 
-		m.contentModel.Update(msg)
-		return m, nil
+		case key.Matches(msg, keys.GlobalKeys.Down):
+			fmt.Println("content -> scroll down")
+			m.contentModel.Update(msg)
+		case key.Matches(msg, keys.GlobalKeys.Up):
+			m.contentModel.Update(msg)
+		}
 
 	case tea.WindowSizeMsg:
 		m.ready = false
@@ -139,13 +143,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Sequence(navCmd, contentSizeCmd, contentActiveCmd)
 	}
 
-	updatedNav, navCmd := m.navModel.Update(msg)
-	m.navModel = updatedNav
-
-	updatedContent, contentCmd := m.contentModel.Update(msg)
-	m.contentModel = updatedContent
-
-	return m, tea.Batch(navCmd, contentCmd)
+	return m, nil
 }
 
 func (m appModel) View() string {

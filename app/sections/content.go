@@ -45,6 +45,7 @@ func (c contentModel) View() string {
 	c.viewportModel.SetContent(
 		c.contents[c.activePage].View(),
 	)
+
 	return c.viewportModel.View()
 }
 
@@ -64,17 +65,15 @@ func (c contentModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case commands.SelectIndex:
 		fmt.Println("content -> select index")
+		fmt.Println((c.viewportModel.Width))
 		c.viewportModel.GotoTop()
 		c.activePage = int(msg)
-		cmd = c.contents[c.activePage].Init()
+		c.contents[c.activePage].Init()
+		c.contents[c.activePage], cmd = c.contents[c.activePage].Update(commands.SetContentWidth(c.viewportModel.Width))
 
 	case tea.WindowSizeMsg:
-		fmt.Println("content -> window size msg")
 		c.viewportModel.Width = msg.Width
 		c.viewportModel.Height = msg.Height
-		c.contents[c.activePage], cmd = c.contents[c.activePage].Update(msg)
-
-	default:
 		c.contents[c.activePage], cmd = c.contents[c.activePage].Update(msg)
 	}
 
