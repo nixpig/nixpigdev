@@ -39,14 +39,18 @@ func (sb *scrapbook) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case blogPostsMsg:
 		sb.blogItems = []blogItem{}
-		for _, item := range msg.Items {
-			sb.blogItems = append(sb.blogItems, blogItem{
-				title: item.Title,
-				link:  item.GUID,
-			})
+		if msg == nil {
+			fmt.Println("blog posts msg is nil")
+		} else {
+			for _, item := range msg.Items {
+				sb.blogItems = append(sb.blogItems, blogItem{
+					title: item.Title,
+					link:  item.GUID,
+				})
+			}
 		}
-
 	}
+
 	return nil, nil
 }
 
@@ -97,7 +101,10 @@ func (sb *scrapbook) FilterValue() string {
 }
 
 func (sb *scrapbook) getBlogPosts() tea.Msg {
-	fetched, _ := fp.ParseURL("https://medium.com/feed/@nixpig")
+	fetched, err := fp.ParseURL("https://medium.com/feed/@nixpig")
+	if err != nil {
+		fmt.Println(fmt.Errorf("failed to fetch feed: %w", err))
+	}
 
 	return blogPostsMsg(fetched)
 }
