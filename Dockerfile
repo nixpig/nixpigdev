@@ -1,7 +1,7 @@
 ARG GO_VERSION=1
 FROM golang:${GO_VERSION}-bookworm as builder
 
-RUN apt update && apt install -y ca-certificates
+RUN apt update && apt install -y ca-certificates openssl
 
 WORKDIR /usr/src/app
 COPY go.mod go.sum ./
