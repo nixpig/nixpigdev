@@ -6,93 +6,77 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/nixpigdev/app/commands"
 	"github.com/nixpig/nixpigdev/app/keys"
-	"github.com/nixpig/nixpigdev/app/pages"
 )
 
-type Content struct {
-	style      lipgloss.Style
-	model      viewport.Model
-	contents   []pages.Page
-	renderer   *lipgloss.Renderer
-	activePage int
+type contentModel struct {
+	style         lipgloss.Style
+	viewportModel viewport.Model
+	contents      []tea.Model
+	renderer      *lipgloss.Renderer
+	activePage    int
 }
 
-func NewContent(renderer *lipgloss.Renderer, contents []pages.Page) *Content {
+func NewContent(
+	renderer *lipgloss.Renderer,
+	contents []tea.Model,
+) *contentModel {
 	contentStyle := renderer.NewStyle()
-	initialModel := viewport.New(0, 0)
+	viewportModel := viewport.New(0, 0)
 
-	c := &Content{
-		style:    contentStyle,
-		model:    initialModel,
-		contents: contents,
-		renderer: renderer,
+	c := &contentModel{
+		style:         contentStyle,
+		viewportModel: viewportModel,
+		contents:      contents,
+		renderer:      renderer,
 	}
 
 	return c
 }
 
-func (c *Content) Init() tea.Cmd {
+func (c contentModel) Init() tea.Cmd {
 	c.contents[c.activePage].Init()
 	return nil
 }
 
-func (c *Content) View() string {
-	c.model.SetContent(
-		c.contents[c.activePage].View(
-			pages.ContentSize{
-				Width:  c.model.Width,
-				Height: c.model.Height,
-			},
-			c.md,
-			c.renderer,
-		),
+func (c contentModel) View() string {
+	c.viewportModel.SetContent(
+		c.contents[c.activePage].View(),
 	)
-	return c.model.View()
+	return c.viewportModel.View()
 }
 
-func (c *Content) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (c contentModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.GlobalKeys.Down):
-			c.model.LineDown(1)
+			fmt.Println("content -> scroll down")
+			c.viewportModel.LineDown(1)
 		case key.Matches(msg, keys.GlobalKeys.Up):
-			c.model.LineUp(1)
-		case key.Matches(msg, keys.GlobalKeys.Next), key.Matches(msg, keys.GlobalKeys.Prev):
-			c.model.GotoTop()
+			fmt.Println("content -> scroll up")
+			c.viewportModel.LineUp(1)
 		}
 
-	case pages.ActivePage:
-		c.model.GotoTop()
+	case commands.SelectIndex:
+		fmt.Println("content -> select index")
+		c.viewportModel.GotoTop()
 		c.activePage = int(msg)
-		cmd := c.contents[c.activePage].Init()
-		return c, cmd
+		cmd = c.contents[c.activePage].Init()
 
 	case tea.WindowSizeMsg:
-		c.model.Width = msg.Width
-		c.model.Height = msg.Height
+		fmt.Println("content -> window size msg")
+		c.viewportModel.Width = msg.Width
+		c.viewportModel.Height = msg.Height
+		c.contents[c.activePage], cmd = c.contents[c.activePage].Update(msg)
+
+	default:
+		c.contents[c.activePage], cmd = c.contents[c.activePage].Update(msg)
 	}
 
-	_, pageCmd := c.contents[c.activePage].Update(msg)
-
-	return c, tea.Batch(pageCmd)
-}
-
-func (c *Content) md(plain string) string {
-	tr, err := glamour.NewTermRenderer(
-		glamour.WithWordWrap(c.model.Width),
-		glamour.WithStylePath("dracula"),
-	)
-	if err != nil {
-		return fmt.Sprintf("Failed to create term renderer: %s", err)
-	}
-	rendered, err := tr.Render(plain)
-	if err != nil {
-		return fmt.Sprintf("Failed to render '%s': %s", plain, err)
-	}
-
-	return rendered
+	return c, tea.Batch(cmd)
 }
