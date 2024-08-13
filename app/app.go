@@ -1,14 +1,12 @@
 package app
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/ssh"
-	"github.com/nixpig/nixpigdev/app/commands"
 	"github.com/nixpig/nixpigdev/app/keys"
 	"github.com/nixpig/nixpigdev/app/pages"
 	"github.com/nixpig/nixpigdev/app/sections"
@@ -50,11 +48,11 @@ type appModel struct {
 
 func New(pty ssh.Pty, renderer *lipgloss.Renderer) appModel {
 	var pages = []tea.Model{
-		pages.NewHome(renderer, md),
+		pages.NewHome(int(homeView), renderer, md),
 		// pages.NewScrapbook(renderer, md),
 		// pages.NewProjects(renderer, md),
 		// pages.NewResume(renderer, md),
-		pages.NewUses(renderer, md),
+		pages.NewUses(int(usesView), renderer, md),
 		// pages.NewContact(renderer, md),
 	}
 
@@ -76,74 +74,46 @@ func (m appModel) Init() tea.Cmd {
 }
 
 func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.GlobalKeys.Quit):
 			return m, tea.Quit
-
-		case key.Matches(msg, keys.GlobalKeys.Next):
-			if m.activePage == len(m.pages)-1 {
-				m.activePage = 0
-			} else {
-				m.activePage++
-			}
-
-			updatedNav, navCmd := m.navModel.Update(commands.SelectIndex(m.activePage))
-			m.navModel = updatedNav
-
-			updatedContent, contentCmd := m.contentModel.Update(commands.SelectIndex(m.activePage))
-			m.contentModel = updatedContent
-
-			return m, tea.Batch(navCmd, contentCmd)
-
-		case key.Matches(msg, keys.GlobalKeys.Prev):
-			if m.activePage == 0 {
-				m.activePage = len(m.pages) - 1
-			} else {
-				m.activePage--
-			}
-
-			updatedNav, navCmd := m.navModel.Update(commands.SelectIndex(m.activePage))
-			m.navModel = updatedNav
-
-			updatedContent, contentCmd := m.contentModel.Update(commands.SelectIndex(m.activePage))
-			m.contentModel = updatedContent
-
-			return m, tea.Batch(navCmd, contentCmd)
-
-		case key.Matches(msg, keys.GlobalKeys.Down):
-			fmt.Println("content -> scroll down")
-			m.contentModel.Update(msg)
-		case key.Matches(msg, keys.GlobalKeys.Up):
-			m.contentModel.Update(msg)
 		}
 
 	case tea.WindowSizeMsg:
 		m.ready = false
 
-		updatedNav, navCmd := m.navModel.Update(tea.WindowSizeMsg{
+		m.navModel, cmd = m.navModel.Update(tea.WindowSizeMsg{
 			Width:  navWidth,
 			Height: msg.Height - heightOffset,
 		})
-		m.navModel = updatedNav
+		cmds = append(cmds, cmd)
 
-		updatedContentSize, contentSizeCmd := m.contentModel.Update(tea.WindowSizeMsg{
+		m.contentModel, cmd = m.contentModel.Update(tea.WindowSizeMsg{
 			Width:  msg.Width - navWidth,
 			Height: msg.Height - heightOffset,
 		})
-		m.contentModel = updatedContentSize
-
-		// explicitly call update so that wordwrap is applied
-		updatedContentActive, contentActiveCmd := m.contentModel.Update(commands.SelectIndex(m.activePage))
-		m.contentModel = updatedContentActive
+		cmds = append(cmds, cmd)
 
 		m.ready = true
 
-		return m, tea.Sequence(navCmd, contentSizeCmd, contentActiveCmd)
+		return m, tea.Batch(cmds...)
 	}
 
-	return m, nil
+	m.navModel, cmd = m.navModel.Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.contentModel, cmd = m.contentModel.Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.footerModel, cmd = m.footerModel.Update(msg)
+	cmds = append(cmds, cmd)
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m appModel) View() string {

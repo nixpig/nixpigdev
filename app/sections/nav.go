@@ -104,6 +104,9 @@ func (n navModel) View() string {
 }
 
 func (n navModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		n.listModel.SetWidth(msg.Width)
@@ -111,15 +114,24 @@ func (n navModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch {
+
+		// TODO: handle next/prev at beginning/end of list
+
 		case key.Matches(msg, keys.GlobalKeys.Next):
 			n.listModel.CursorDown()
+			// TODO: send view enum nav command
+			cmd = func() tea.Msg { return commands.NavigateToPage(n.listModel.Index() + 1) }
+			cmds = append(cmds, cmd)
+			fmt.Println("nav -> send down command: ", n.listModel.SelectedItem())
+
 		case key.Matches(msg, keys.GlobalKeys.Prev):
 			n.listModel.CursorUp()
+			// TODO: send view enum nav command
+			cmd = func() tea.Msg { return commands.NavigateToPage(n.listModel.Index() - 1) }
+			cmds = append(cmds, cmd)
+			fmt.Println("nav -> send up command: ", n.listModel.SelectedItem())
 		}
-
-	case commands.SelectIndex:
-		n.listModel.Select(int(msg))
 	}
 
-	return n, nil
+	return n, tea.Batch(cmds...)
 }

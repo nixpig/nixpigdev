@@ -11,6 +11,7 @@ import (
 )
 
 type homeModel struct {
+	viewStateId  int
 	style        lipgloss.Style
 	title        string
 	description  string
@@ -20,12 +21,14 @@ type homeModel struct {
 }
 
 func NewHome(
+	viewStateId int,
 	renderer *lipgloss.Renderer,
 	md mdrenderer,
 ) homeModel {
 	homeStyle := renderer.NewStyle()
 
 	return homeModel{
+		viewStateId: viewStateId,
 		style:       homeStyle,
 		title:       "Home",
 		description: "Where the ♥ is",

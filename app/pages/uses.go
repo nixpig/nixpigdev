@@ -9,6 +9,7 @@ import (
 )
 
 type usesModel struct {
+	viewStateId  int
 	style        lipgloss.Style
 	title        string
 	description  string
@@ -18,10 +19,12 @@ type usesModel struct {
 }
 
 func NewUses(
+	viewStateId int,
 	renderer *lipgloss.Renderer,
 	md mdrenderer,
 ) usesModel {
 	return usesModel{
+		viewStateId: viewStateId,
 		style:       renderer.NewStyle(),
 		title:       "Uses",
 		description: "Tools of the trade",

@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/nixpig/nixpigdev/app/commands"
 	"github.com/nixpig/nixpigdev/app/keys"
 )
 
@@ -51,31 +50,39 @@ func (c contentModel) View() string {
 
 func (c contentModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.GlobalKeys.Down):
 			fmt.Println("content -> scroll down")
-			c.viewportModel.LineDown(1)
+			c.viewportModel.LineDown(5)
+			fmt.Println("down percent: ", c.viewportModel.ScrollPercent()*100)
+			fmt.Println("total lines: ", c.viewportModel.TotalLineCount())
+			fmt.Println("visible lines: ", c.viewportModel.VisibleLineCount())
 		case key.Matches(msg, keys.GlobalKeys.Up):
 			fmt.Println("content -> scroll up")
-			c.viewportModel.LineUp(1)
+			c.viewportModel.LineUp(5)
 		}
 
-	case commands.SelectIndex:
-		fmt.Println("content -> select index")
-		fmt.Println((c.viewportModel.Width))
-		c.viewportModel.GotoTop()
-		c.activePage = int(msg)
-		c.contents[c.activePage].Init()
-		c.contents[c.activePage], cmd = c.contents[c.activePage].Update(commands.SetContentWidth(c.viewportModel.Width))
+	// case commands.NavigateToPage:
+	// 	fmt.Println("content -> select index")
+	// 	fmt.Println((c.viewportModel.Width))
+	// 	c.viewportModel.GotoTop()
+	// 	c.activePage = int(msg)
+	// 	c.contents[c.activePage].Init()
+	// 	c.contents[c.activePage], cmd = c.contents[c.activePage].Update(commands.SetContentWidth(c.viewportModel.Width))
+	// 	cmds = append(cmds, cmd)
 
 	case tea.WindowSizeMsg:
 		c.viewportModel.Width = msg.Width
 		c.viewportModel.Height = msg.Height
 		c.contents[c.activePage], cmd = c.contents[c.activePage].Update(msg)
+		return c, cmd
 	}
 
-	return c, tea.Batch(cmd)
+	cmds = append(cmds, cmd)
+
+	return c, tea.Batch(cmds...)
 }
