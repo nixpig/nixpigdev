@@ -115,17 +115,19 @@ func (n navModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 
-		// TODO: handle next/prev at beginning/end of list
-
 		case key.Matches(msg, keys.GlobalKeys.Next):
-			n.listModel.CursorDown()
+			if n.listModel.Index() < len(n.listModel.Items())-1 {
+				n.listModel.Select(n.listModel.Index() + 1)
+			}
 			// TODO: send view enum nav command
 			cmd = func() tea.Msg { return commands.NavigateToPage(n.listModel.Index() + 1) }
 			cmds = append(cmds, cmd)
 			fmt.Println("nav -> send down command: ", n.listModel.SelectedItem())
 
 		case key.Matches(msg, keys.GlobalKeys.Prev):
-			n.listModel.CursorUp()
+			if n.listModel.Index() > 0 {
+				n.listModel.Select(n.listModel.Index() - 1)
+			}
 			// TODO: send view enum nav command
 			cmd = func() tea.Msg { return commands.NavigateToPage(n.listModel.Index() - 1) }
 			cmds = append(cmds, cmd)
