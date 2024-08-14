@@ -11,7 +11,6 @@ import (
 )
 
 type homeModel struct {
-	viewStateId  int
 	style        lipgloss.Style
 	title        string
 	description  string
@@ -21,14 +20,12 @@ type homeModel struct {
 }
 
 func NewHome(
-	viewStateId int,
 	renderer *lipgloss.Renderer,
 	md mdrenderer,
 ) homeModel {
 	homeStyle := renderer.NewStyle()
 
 	return homeModel{
-		viewStateId: viewStateId,
 		style:       homeStyle,
 		title:       "Home",
 		description: "Where the ♥ is",
@@ -82,10 +79,9 @@ I live in the countryside with my beautiful partner, cats and dog, and enjoy goi
 
 func (h homeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
+	case commands.SectionSizeMsg:
 		h.contentWidth = msg.Width
-	case commands.SetContentWidth:
-		h.contentWidth = int(msg)
+		return h, nil
 	}
 
 	return h, nil

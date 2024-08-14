@@ -9,7 +9,6 @@ import (
 )
 
 type usesModel struct {
-	viewStateId  int
 	style        lipgloss.Style
 	title        string
 	description  string
@@ -19,12 +18,10 @@ type usesModel struct {
 }
 
 func NewUses(
-	viewStateId int,
 	renderer *lipgloss.Renderer,
 	md mdrenderer,
 ) usesModel {
 	return usesModel{
-		viewStateId: viewStateId,
 		style:       renderer.NewStyle(),
 		title:       "Uses",
 		description: "Tools of the trade",
@@ -39,10 +36,9 @@ func (u usesModel) Init() tea.Cmd {
 
 func (u usesModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
+	case commands.SectionSizeMsg:
 		u.contentWidth = msg.Width
-	case commands.SetContentWidth:
-		u.contentWidth = int(msg)
+		return u, nil
 	}
 
 	return u, nil

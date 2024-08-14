@@ -19,14 +19,14 @@ type navModel struct {
 
 func NewNav(
 	renderer *lipgloss.Renderer,
-	contents []tea.Model,
+	pageModels []tea.Model,
 ) *navModel {
 	navStyle := renderer.NewStyle().
 		MarginTop(1).
 		PaddingRight(0)
 
-	var listItems = make([]list.Item, len(contents))
-	for i, page := range contents {
+	var listItems = make([]list.Item, len(pageModels))
+	for i, page := range pageModels {
 		p, ok := page.(list.Item)
 		if !ok {
 			fmt.Println("cannot type assert page to list item")
@@ -108,30 +108,31 @@ func (n navModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
+	case commands.SectionSizeMsg:
 		n.listModel.SetWidth(msg.Width)
 		n.listModel.SetHeight(msg.Height)
 
 	case tea.KeyMsg:
 		switch {
-
 		case key.Matches(msg, keys.GlobalKeys.Next):
 			if n.listModel.Index() < len(n.listModel.Items())-1 {
 				n.listModel.Select(n.listModel.Index() + 1)
 			}
-			// TODO: send view enum nav command
-			cmd = func() tea.Msg { return commands.NavigateToPage(n.listModel.Index() + 1) }
-			cmds = append(cmds, cmd)
-			fmt.Println("nav -> send down command: ", n.listModel.SelectedItem())
+			cmd = func() tea.Msg {
+				// TODO: send view enum nav command
+				return commands.PageNavigationMsg(n.listModel.Index())
+			}
+			return n, cmd
 
 		case key.Matches(msg, keys.GlobalKeys.Prev):
 			if n.listModel.Index() > 0 {
 				n.listModel.Select(n.listModel.Index() - 1)
 			}
-			// TODO: send view enum nav command
-			cmd = func() tea.Msg { return commands.NavigateToPage(n.listModel.Index() - 1) }
-			cmds = append(cmds, cmd)
-			fmt.Println("nav -> send up command: ", n.listModel.SelectedItem())
+			cmd = func() tea.Msg {
+				// TODO: send view enum nav command
+				return commands.PageNavigationMsg(n.listModel.Index())
+			}
+			return n, cmd
 		}
 	}
 

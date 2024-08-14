@@ -4,23 +4,14 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/ssh"
+	"github.com/nixpig/nixpigdev/app/commands"
 	"github.com/nixpig/nixpigdev/app/keys"
 	"github.com/nixpig/nixpigdev/app/pages"
 	"github.com/nixpig/nixpigdev/app/sections"
-)
-
-type state int
-
-const (
-	homeView state = iota
-	scrapbookView
-	projectsView
-	resumeView
-	usesView
-	contactView
 )
 
 const (
@@ -30,15 +21,14 @@ const (
 
 type appModel struct {
 	renderer *lipgloss.Renderer
-	state    state
 
 	term   string
 	width  int
 	height int
 
-	navModel     tea.Model
-	footerModel  tea.Model
-	contentModel tea.Model
+	navModel      tea.Model
+	viewportModel viewport.Model
+	footerModel   tea.Model
 
 	pages []tea.Model
 
@@ -47,29 +37,29 @@ type appModel struct {
 }
 
 func New(pty ssh.Pty, renderer *lipgloss.Renderer) appModel {
-	var pages = []tea.Model{
-		pages.NewHome(int(homeView), renderer, md),
+	pageModels := []tea.Model{
+		pages.NewHome(renderer, md),
 		// pages.NewScrapbook(renderer, md),
 		// pages.NewProjects(renderer, md),
 		// pages.NewResume(renderer, md),
-		pages.NewUses(int(usesView), renderer, md),
+		pages.NewUses(renderer, md),
 		// pages.NewContact(renderer, md),
 	}
 
+	viewportModel := viewport.New(0, 0)
+
 	return appModel{
-		term:         pty.Term,
-		width:        pty.Window.Width,
-		height:       pty.Window.Height,
-		contentModel: sections.NewContent(renderer, pages),
-		navModel:     sections.NewNav(renderer, pages),
-		footerModel:  sections.NewFooter(renderer, keys.GlobalKeys),
-		pages:        pages,
+		term:          pty.Term,
+		width:         pty.Window.Width,
+		height:        pty.Window.Height,
+		navModel:      sections.NewNav(renderer, pageModels),
+		footerModel:   sections.NewFooter(renderer, keys.GlobalKeys),
+		viewportModel: viewportModel,
+		pages:         pageModels,
 	}
 }
 
 func (m appModel) Init() tea.Cmd {
-	m.navModel.Init()
-	m.contentModel.Init()
 	return nil
 }
 
@@ -82,32 +72,48 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, keys.GlobalKeys.Quit):
 			return m, tea.Quit
+
+		case key.Matches(msg, keys.GlobalKeys.Down):
+			m.viewportModel.LineDown(1)
+			return m, nil
+
+		case key.Matches(msg, keys.GlobalKeys.Up):
+			m.viewportModel.LineUp(1)
+			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
 		m.ready = false
 
-		m.navModel, cmd = m.navModel.Update(tea.WindowSizeMsg{
+		m.navModel, cmd = m.navModel.Update(commands.SectionSizeMsg{
 			Width:  navWidth,
 			Height: msg.Height - heightOffset,
 		})
 		cmds = append(cmds, cmd)
 
-		m.contentModel, cmd = m.contentModel.Update(tea.WindowSizeMsg{
+		m.pages[m.activePage], cmd = m.pages[m.activePage].Update(commands.SectionSizeMsg{
 			Width:  msg.Width - navWidth,
 			Height: msg.Height - heightOffset,
 		})
 		cmds = append(cmds, cmd)
 
+		m.viewportModel.Width = msg.Width - navWidth
+		m.viewportModel.Height = msg.Height - heightOffset
+		m.viewportModel.SetContent(m.pages[m.activePage].View())
+
 		m.ready = true
 
 		return m, tea.Batch(cmds...)
+
+	case commands.PageNavigationMsg:
+		if int(msg) >= 0 || int(msg) < len(m.pages) {
+			m.activePage = int(msg)
+			m.viewportModel.SetContent(m.pages[m.activePage].View())
+		}
+		return m, nil
 	}
 
 	m.navModel, cmd = m.navModel.Update(msg)
-	cmds = append(cmds, cmd)
-
-	m.contentModel, cmd = m.contentModel.Update(msg)
 	cmds = append(cmds, cmd)
 
 	m.footerModel, cmd = m.footerModel.Update(msg)
@@ -129,7 +135,7 @@ func (m appModel) View() string {
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
 				m.navModel.View(),
-				m.contentModel.View(),
+				m.viewportModel.View(),
 			),
 			m.footerModel.View(),
 		),
