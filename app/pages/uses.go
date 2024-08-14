@@ -5,28 +5,45 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/nixpigdev/app/commands"
 )
 
-type uses struct {
-	title       string
-	description string
+type usesModel struct {
+	title        string
+	description  string
+	renderer     *lipgloss.Renderer
+	md           mdrenderer
+	contentWidth int
 }
 
-var Uses = uses{
-	title:       "Uses",
-	description: "Tools of the trade",
+func NewUses(
+	renderer *lipgloss.Renderer,
+	md mdrenderer,
+) usesModel {
+	return usesModel{
+		title:       "Uses",
+		description: "Tools of the trade",
+		renderer:    renderer,
+		md:          md,
+	}
 }
 
-func (u *uses) Init() tea.Cmd {
+func (u usesModel) Init() tea.Cmd {
 	return nil
 }
 
-func (u *uses) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return nil, nil
+func (u usesModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case commands.SectionSizeMsg:
+		u.contentWidth = msg.Width
+		return u, nil
+	}
+
+	return u, nil
 }
 
-func (u *uses) View(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
-	return md(`
+func (u usesModel) View() string {
+	return u.md(`
 # Uses
 
 I'm a simple person, with simple needs. I spend most of my time in the terminal, and my setup is built around being able to work in that environment (somewhat) efficiently.
@@ -54,17 +71,17 @@ I'm a simple person, with simple needs. I spend most of my time in the terminal,
 - **Mouse:** The original [Mad Catz RAT 1](https://uk.webuy.com/product-detail?id=0728658050467C)
 - **Headset:** [JBL Quantum 810](https://uk.jbl.com/gaming-headsets/JBLQ810WLBLK.html)
 
-			`)
+			`, u.contentWidth)
 }
 
-func (u *uses) Title() string {
+func (u usesModel) Title() string {
 	return u.title
 }
 
-func (u *uses) Description() string {
+func (u usesModel) Description() string {
 	return u.description
 }
 
-func (u *uses) FilterValue() string {
+func (u usesModel) FilterValue() string {
 	return fmt.Sprintf("%s %s", u.title, u.description)
 }

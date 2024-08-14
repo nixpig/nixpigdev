@@ -6,38 +6,47 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/nixpigdev/app/commands"
 )
 
-type resume struct {
-	title       string
-	description string
+type resumeModel struct {
+	title        string
+	description  string
+	renderer     *lipgloss.Renderer
+	md           mdrenderer
+	contentWidth int
 }
 
-var Resume = resume{
-	title:       "Resume",
-	description: "Skills + experience",
+func NewResume(
+	renderer *lipgloss.Renderer,
+	md mdrenderer,
+) resumeModel {
+	return resumeModel{
+		title:       "Resume",
+		description: "Skills + experience",
+		renderer:    renderer,
+		md:          md,
+	}
+
 }
 
-func (r *resume) Init() tea.Cmd {
+func (r resumeModel) Init() tea.Cmd {
 	return nil
 }
 
-func (r *resume) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return nil, nil
+func (r resumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case commands.SectionSizeMsg:
+		r.contentWidth = msg.Width
+		return r, nil
+	}
+
+	return r, nil
 }
 
-func (r *resume) View(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
-
-	// tr, err := glamour.NewTermRenderer(
-	// 	glamour.WithStylePath("dracula"),
-	// 	glamour.WithWordWrap(w/2-2),
-	// )
-	// if err != nil {
-	// 	return fmt.Sprintf("failed to create term renderer: %s", err)
-	// }
-
+func (r resumeModel) View() string {
 	return strings.Join([]string{
-		md(`
+		r.md(`
 # Résumé
 
 Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.
@@ -67,18 +76,18 @@ Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint 
 **University (2012 - 2014)** - _Engineering, Foundation Deg._
 
 **College (2011 - 2012)** - _ICT_
-				`),
+				`, r.contentWidth),
 	}, "")
 }
 
-func (r *resume) Title() string {
+func (r resumeModel) Title() string {
 	return r.title
 }
 
-func (r *resume) Description() string {
+func (r resumeModel) Description() string {
 	return r.description
 }
 
-func (r *resume) FilterValue() string {
+func (r resumeModel) FilterValue() string {
 	return fmt.Sprintf("%s %s", r.title, r.description)
 }

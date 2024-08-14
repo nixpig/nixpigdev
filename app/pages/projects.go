@@ -5,28 +5,45 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/nixpigdev/app/commands"
 )
 
-type projects struct {
-	title       string
-	description string
+type projectsModel struct {
+	title        string
+	description  string
+	renderer     *lipgloss.Renderer
+	md           mdrenderer
+	contentWidth int
 }
 
-var Projects = projects{
-	title:       "Projects",
-	description: "OSS + personal projects",
+func NewProjects(
+	renderer *lipgloss.Renderer,
+	md mdrenderer,
+) projectsModel {
+	return projectsModel{
+		title:       "Projects",
+		description: "OSS + personal projects",
+		renderer:    renderer,
+		md:          md,
+	}
 }
 
-func (p *projects) Init() tea.Cmd {
+func (p projectsModel) Init() tea.Cmd {
 	return nil
 }
 
-func (p *projects) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return nil, nil
+func (p projectsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case commands.SectionSizeMsg:
+		p.contentWidth = msg.Width
+		return p, nil
+	}
+
+	return p, nil
 }
 
-func (p *projects) View(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
-	return md(`
+func (p projectsModel) View() string {
+	return p.md(`
 # Projects
 
 [syringe.sh](https://github.com/nixpig/syringe.sh) • _Go_
@@ -40,17 +57,17 @@ Super-simple to configure HTTP/S reverse proxy for local dev; supports HTTP/1.1,
 [corkscrew](https://github.com/nixpig/corkscrew) • _Rust_
 
 Batch executor for HTTP requests configured in a simple YAML schema.
-			`)
+			`, p.contentWidth)
 }
 
-func (p *projects) Title() string {
+func (p projectsModel) Title() string {
 	return p.title
 }
 
-func (p *projects) Description() string {
+func (p projectsModel) Description() string {
 	return p.description
 }
 
-func (p *projects) FilterValue() string {
+func (p projectsModel) FilterValue() string {
 	return fmt.Sprintf("%s %s", p.title, p.description)
 }

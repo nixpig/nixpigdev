@@ -11,53 +11,75 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/nixpigdev/app/commands"
 	"github.com/nixpig/nixpigdev/app/keys"
 	"github.com/nixpig/nixpigdev/app/theme"
 )
 
-type contact struct {
-	title       string
-	description string
-	form        form
+type contactModel struct {
+	title        string
+	description  string
+	form         form
+	renderer     *lipgloss.Renderer
+	md           mdrenderer
+	contentWidth int
 }
 
-var Contact = contact{
-	title:       "Contact",
-	description: "Come say hi!",
-	form:        NewForm(),
+func NewContact(
+
+	renderer *lipgloss.Renderer,
+	md mdrenderer,
+) contactModel {
+	return contactModel{
+		title:       "Contact",
+		description: "Come say hi!",
+		form:        NewForm(),
+		renderer:    renderer,
+		md:          md,
+	}
 }
 
-func (c *contact) Init() tea.Cmd {
+func (c contactModel) Init() tea.Cmd {
 	return nil
 }
 
-func (c *contact) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	_, cmd := c.form.Update(msg)
-	return nil, cmd
+func (c contactModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case commands.SectionSizeMsg:
+		c.contentWidth = msg.Width
+		return c, nil
+
+	case tea.KeyMsg:
+
+		_, cmd := c.form.Update(msg)
+		return c, cmd
+	}
+
+	return c, nil
 }
 
-func (c *contact) View(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
+func (c contactModel) View() string {
 	return strings.Join([]string{
-		md(`
+		c.md(`
 # Contact
 
 Feel free to reach out and say "Hi!"
 
-**✉ Email:** [hi@nixpig.dev](mailto:hi@nixpig.dev)`),
+**✉ Email:** [hi@nixpig.dev](mailto:hi@nixpig.dev)`, c.contentWidth),
 
-		c.form.View(renderer),
+		c.form.View(c.renderer),
 	}, "")
 }
 
-func (c *contact) Title() string {
+func (c contactModel) Title() string {
 	return c.title
 }
 
-func (c *contact) Description() string {
+func (c contactModel) Description() string {
 	return c.description
 }
 
-func (c *contact) FilterValue() string {
+func (c contactModel) FilterValue() string {
 	return fmt.Sprintf("%s %s", c.title, c.description)
 }
 

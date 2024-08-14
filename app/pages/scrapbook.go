@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mmcdole/gofeed"
+	"github.com/nixpig/nixpigdev/app/commands"
 	"github.com/nixpig/nixpigdev/app/theme"
 )
 
@@ -18,59 +19,77 @@ type blogItem struct {
 	link  string
 }
 
-type scrapbook struct {
-	title       string
-	description string
-	blogItems   []blogItem
+type scrapbookModel struct {
+	title        string
+	description  string
+	blogItems    []blogItem
+	renderer     *lipgloss.Renderer
+	md           mdrenderer
+	contentWidth int
 }
 
 var fp = gofeed.NewParser()
 
-var Scrapbook = scrapbook{
-	title:       "Scrapbook",
-	description: "Notes, blogs, gists…",
+func NewScrapbook(
+	renderer *lipgloss.Renderer,
+	md mdrenderer,
+) scrapbookModel {
+	return scrapbookModel{
+		title:       "Scrapbook",
+		description: "Notes, blogs, gists…",
+		renderer:    renderer,
+		md:          md,
+	}
 }
 
-func (sb *scrapbook) Init() tea.Cmd {
-	return sb.getBlogPosts
+func (s scrapbookModel) Init() tea.Cmd {
+	fmt.Println("initialising scrapbook")
+	return s.getBlogPosts
 }
 
-func (sb *scrapbook) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (s scrapbookModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case blogPostsMsg:
-		sb.blogItems = []blogItem{}
+		fmt.Println("received blogs")
+		s.blogItems = []blogItem{}
 		if msg == nil {
 			fmt.Println("blog posts msg is nil")
 		} else {
 			for _, item := range msg.Items {
-				sb.blogItems = append(sb.blogItems, blogItem{
+				s.blogItems = append(s.blogItems, blogItem{
 					title: item.Title,
 					link:  item.GUID,
 				})
 			}
 		}
+
+		return s, nil
+
+	case commands.SectionSizeMsg:
+		s.contentWidth = msg.Width
+		return s, nil
 	}
 
-	return nil, nil
+	return s, nil
 }
 
-func (sb *scrapbook) View(s ContentSize, md mdrenderer, renderer *lipgloss.Renderer) string {
+func (s scrapbookModel) View() string {
 	tr, err := glamour.NewTermRenderer(
 		glamour.WithStylePath("dracula"),
-		glamour.WithWordWrap(s.Width/2-2),
+		glamour.WithWordWrap(s.contentWidth/2-2),
 	)
 	if err != nil {
 		return fmt.Sprintf("Failed to create term renderer: %s", err)
 	}
 
-	container := renderer.NewStyle()
-	padded := renderer.NewStyle().
+	container := s.renderer.NewStyle()
+	padded := s.renderer.NewStyle().
 		PaddingLeft(2).
 		PaddingRight(2)
 
 	blogs := strings.Builder{}
 
-	for _, item := range sb.blogItems {
+	for _, item := range s.blogItems {
 		blogs.WriteString(fmt.Sprintf("- [%s](%s)", item.title, item.link))
 	}
 
@@ -82,29 +101,31 @@ func (sb *scrapbook) View(s ContentSize, md mdrenderer, renderer *lipgloss.Rende
 	row := container.Render(b)
 
 	return strings.Join([]string{
-		md("# Scrapbook"),
+		s.md("# Scrapbook", s.contentWidth),
 		padded.Foreground(lipgloss.Color(theme.Dracula.Foreground)).Render("Just some stuff...\n"),
 		row,
 	}, "")
 }
 
-func (sb *scrapbook) Title() string {
-	return sb.title
+func (s scrapbookModel) Title() string {
+	return s.title
 }
 
-func (sb *scrapbook) Description() string {
-	return sb.description
+func (s scrapbookModel) Description() string {
+	return s.description
 }
 
-func (sb *scrapbook) FilterValue() string {
-	return fmt.Sprintf("%s %s", sb.title, sb.description)
+func (s scrapbookModel) FilterValue() string {
+	return fmt.Sprintf("%s %s", s.title, s.description)
 }
 
-func (sb *scrapbook) getBlogPosts() tea.Msg {
+func (s scrapbookModel) getBlogPosts() tea.Msg {
+	fmt.Println("fetching blogs...")
 	fetched, err := fp.ParseURL("https://medium.com/feed/@nixpig")
 	if err != nil {
 		fmt.Println(fmt.Errorf("failed to fetch feed: %w", err))
 	}
 
+	fmt.Println("fetched blogs.")
 	return blogPostsMsg(fetched)
 }

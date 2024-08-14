@@ -5,13 +5,29 @@ primary_region = 'lhr'
   [build.args]
     GO_VERSION = '1.22.4'
 
-[services]
+[[services]]
   internal_port = 23234
   protocol = 'tcp'
   auto_stop_machines = true
   auto_start_machines = true
   [[services.ports]]
     port = 22
+
+[[services]]
+  internal_port = 8080
+  protocol = 'tcp'
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  [[services.ports]]
+    port = 80
+  [[services.ports]]
+    port = 443
+
+
+[[statics]]
+  guest_path = "/usr/src/app/web"
+  url_prefix = "/"
 
 [[vm]]
   memory = '1gb'

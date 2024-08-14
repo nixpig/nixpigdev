@@ -4,160 +4,142 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/ssh"
+	"github.com/nixpig/nixpigdev/app/commands"
 	"github.com/nixpig/nixpigdev/app/keys"
 	"github.com/nixpig/nixpigdev/app/pages"
 	"github.com/nixpig/nixpigdev/app/sections"
 )
 
-func New(pty ssh.Pty, renderer *lipgloss.Renderer) model {
-	var pages = []pages.Page{
-		&pages.Home,
-		&pages.Scrapbook,
-		&pages.Projects,
-		&pages.Resume,
-		&pages.Uses,
-		&pages.Contact,
-	}
+const (
+	heightOffset = 2
+	navWidth     = 23
+)
 
-	return model{
-		Term:         pty.Term,
-		Width:        pty.Window.Width,
-		Height:       pty.Window.Height,
-		ContentModel: sections.NewContent(renderer, pages),
-		NavModel:     sections.NewNav(renderer, pages),
-		FooterModel:  sections.NewFooter(renderer, keys.GlobalKeys),
-		pages:        pages,
-	}
-}
+type appModel struct {
+	renderer *lipgloss.Renderer
 
-type model struct {
-	Term         string
-	Width        int
-	Height       int
-	NavModel     *sections.Nav
-	ContentModel *sections.Content
-	FooterModel  *sections.Footer
-	Renderer     *lipgloss.Renderer
-	pages        []pages.Page
+	term   string
+	width  int
+	height int
+
+	navModel      tea.Model
+	viewportModel viewport.Model
+	footerModel   tea.Model
+
+	pages []tea.Model
 
 	ready      bool
 	activePage int
 }
 
-func (m model) Init() tea.Cmd {
-	m.ContentModel.Init()
-	m.NavModel.Init()
+func New(pty ssh.Pty, renderer *lipgloss.Renderer) appModel {
+	pageModels := []tea.Model{
+		pages.NewHome(renderer, md),
+		pages.NewScrapbook(renderer, md),
+		pages.NewProjects(renderer, md),
+		pages.NewResume(renderer, md),
+		pages.NewUses(renderer, md),
+		pages.NewContact(renderer, md),
+	}
+
+	viewportModel := viewport.New(0, 0)
+
+	return appModel{
+		term:          pty.Term,
+		width:         pty.Window.Width,
+		height:        pty.Window.Height,
+		navModel:      sections.NewNav(renderer, pageModels),
+		footerModel:   sections.NewFooter(renderer, keys.GlobalKeys),
+		viewportModel: viewportModel,
+		pages:         pageModels,
+	}
+}
+
+func (m appModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.GlobalKeys.Quit):
 			return m, tea.Quit
 
-		case key.Matches(msg, keys.GlobalKeys.Next):
-			if m.activePage == m.NavModel.Length-1 {
-				m.activePage = 0
-			} else {
-				m.activePage++
-			}
+		case key.Matches(msg, keys.GlobalKeys.Down):
+			m.viewportModel.LineDown(1)
+			return m, nil
 
-			updatedNav, navCmd := m.NavModel.Update(sections.SelectIndex(m.activePage))
-			navModel, ok := updatedNav.(*sections.Nav)
-			if ok {
-				m.NavModel = navModel
-			}
-
-			updatedContent, contentCmd := m.ContentModel.Update(pages.ActivePage(m.activePage))
-			contentModel, ok := updatedContent.(*sections.Content)
-			if ok {
-				m.ContentModel = contentModel
-			}
-
-			return m, tea.Batch(navCmd, contentCmd)
-
-		case key.Matches(msg, keys.GlobalKeys.Prev):
-			if m.activePage == 0 {
-				m.activePage = m.NavModel.Length - 1
-			} else {
-				m.activePage--
-			}
-
-			updatedNav, navCmd := m.NavModel.Update(sections.SelectIndex(m.activePage))
-			navModel, ok := updatedNav.(*sections.Nav)
-			if ok {
-				m.NavModel = navModel
-			}
-
-			updatedContent, contentCmd := m.ContentModel.Update(pages.ActivePage(m.activePage))
-			contentModel, ok := updatedContent.(*sections.Content)
-			if ok {
-				m.ContentModel = contentModel
-			}
-
-			return m, tea.Batch(navCmd, contentCmd)
+		case key.Matches(msg, keys.GlobalKeys.Up):
+			m.viewportModel.LineUp(1)
+			return m, nil
 		}
-
-		m.ContentModel.Update(msg)
-		return m, nil
 
 	case tea.WindowSizeMsg:
 		m.ready = false
 
-		viewportHeight := msg.Height - m.FooterModel.Height() - 2
-
-		updatedNav, navCmd := m.NavModel.Update(tea.WindowSizeMsg{
-			Width:  23,
-			Height: viewportHeight,
+		m.navModel, cmd = m.navModel.Update(commands.SectionSizeMsg{
+			Width:  navWidth,
+			Height: msg.Height - heightOffset,
 		})
+		cmds = append(cmds, cmd)
 
-		navModel, ok := updatedNav.(*sections.Nav)
-		if ok {
-			m.NavModel = navModel
-		}
-
-		updatedContentSize, contentSizeCmd := m.ContentModel.Update(tea.WindowSizeMsg{
-			Width:  msg.Width - m.NavModel.Width(),
-			Height: viewportHeight,
+		m.pages[m.activePage], cmd = m.pages[m.activePage].Update(commands.SectionSizeMsg{
+			Width:  msg.Width - navWidth,
+			Height: msg.Height - heightOffset,
 		})
-		contentSizeModel, ok := updatedContentSize.(*sections.Content)
-		if ok {
-			m.ContentModel = contentSizeModel
-		}
+		cmds = append(cmds, cmd)
 
-		// explicitly call update so that wordwrap is applied
-		updatedContentActive, contentActiveCmd := m.ContentModel.Update(pages.ActivePage(m.activePage))
-		contentActiveModel, ok := updatedContentActive.(*sections.Content)
-		if ok {
-			m.ContentModel = contentActiveModel
-		}
+		m.viewportModel.Width = msg.Width - navWidth
+		m.viewportModel.Height = msg.Height - heightOffset
+		m.pages[m.activePage].Init()
+		m.viewportModel.SetContent(m.pages[m.activePage].View())
 
 		m.ready = true
 
-		return m, tea.Sequence(navCmd, contentSizeCmd, contentActiveCmd)
+		return m, tea.Batch(cmds...)
+
+	case commands.PageNavigationMsg:
+		if int(msg) >= 0 || int(msg) < len(m.pages) {
+			m.activePage = int(msg)
+			m.viewportModel.Width = m.width - navWidth
+			m.viewportModel.Height = m.height - heightOffset
+
+			m.pages[m.activePage], cmd = m.pages[m.activePage].Update(commands.SectionSizeMsg{
+				Width:  m.width - navWidth,
+				Height: m.height - heightOffset,
+			})
+
+			m.viewportModel.SetContent(m.pages[m.activePage].View())
+			m.viewportModel.GotoTop()
+		}
+		return m, nil
 	}
 
-	updatedNav, navCmd := m.NavModel.Update(msg)
-	navModel, ok := updatedNav.(*sections.Nav)
-	if ok {
-		m.NavModel = navModel
-	}
+	m.navModel, cmd = m.navModel.Update(msg)
+	cmds = append(cmds, cmd)
 
-	updatedContent, contentCmd := m.ContentModel.Update(msg)
-	contentModel, ok := updatedContent.(*sections.Content)
-	if ok {
-		m.ContentModel = contentModel
-	}
+	m.footerModel, cmd = m.footerModel.Update(msg)
+	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(navCmd, contentCmd)
+	m.pages[m.activePage], cmd = m.pages[m.activePage].Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.viewportModel.Width = m.width - navWidth
+	m.viewportModel.Height = m.height - heightOffset
+	m.viewportModel.SetContent(m.pages[m.activePage].View())
+
+	return m, tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m appModel) View() string {
 	if !m.ready {
 		return "\nLoading..."
 	}
@@ -169,10 +151,10 @@ func (m model) View() string {
 			lipgloss.Left,
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
-				m.NavModel.View(),
-				m.ContentModel.View(),
+				m.navModel.View(),
+				m.viewportModel.View(),
 			),
-			m.FooterModel.View(),
+			m.footerModel.View(),
 		),
 	)
 

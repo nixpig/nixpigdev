@@ -7,27 +7,31 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/nixpigdev/app/commands"
 	"github.com/nixpig/nixpigdev/app/keys"
-	"github.com/nixpig/nixpigdev/app/pages"
 	"github.com/nixpig/nixpigdev/app/theme"
 )
 
-type SelectIndex int
-
-type Nav struct {
-	style  lipgloss.Style
-	list   list.Model
-	Length int
+type navModel struct {
+	style     lipgloss.Style
+	listModel list.Model
 }
 
-func NewNav(renderer *lipgloss.Renderer, contents []pages.Page) *Nav {
+func NewNav(
+	renderer *lipgloss.Renderer,
+	pageModels []tea.Model,
+) *navModel {
 	navStyle := renderer.NewStyle().
 		MarginTop(1).
 		PaddingRight(0)
 
-	var listItems = make([]list.Item, len(contents))
-	for i, page := range contents {
-		listItems[i] = page
+	var listItems = make([]list.Item, len(pageModels))
+	for i, page := range pageModels {
+		p, ok := page.(list.Item)
+		if !ok {
+			fmt.Println("cannot type assert page to list item")
+		}
+		listItems[i] = p
 	}
 
 	delegate := list.NewDefaultDelegate()
@@ -85,42 +89,52 @@ func NewNav(renderer *lipgloss.Renderer, contents []pages.Page) *Nav {
 	initialModel.SetFilteringEnabled(false)
 	initialModel.SetShowStatusBar(false)
 
-	return &Nav{
-		style:  navStyle,
-		list:   initialModel,
-		Length: len(contents),
+	return &navModel{
+		style:     navStyle,
+		listModel: initialModel,
 	}
 }
 
-func (n *Nav) View() string {
-	return n.style.Render(n.list.View())
+func (n navModel) Init() tea.Cmd {
+	return nil
 }
 
-func (n *Nav) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (n navModel) View() string {
+	return n.style.Render(n.listModel.View())
+}
+
+func (n navModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		n.list.SetWidth(msg.Width)
-		n.list.SetHeight(msg.Height)
+	case commands.SectionSizeMsg:
+		n.listModel.SetWidth(msg.Width)
+		n.listModel.SetHeight(msg.Height)
 
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.GlobalKeys.Next):
-			n.list.CursorDown()
-		case key.Matches(msg, keys.GlobalKeys.Prev):
-			n.list.CursorUp()
-		}
+			if n.listModel.Index() < len(n.listModel.Items())-1 {
+				n.listModel.Select(n.listModel.Index() + 1)
+			}
+			cmd = func() tea.Msg {
+				// TODO: send view enum nav command
+				return commands.PageNavigationMsg(n.listModel.Index())
+			}
+			return n, cmd
 
-	case SelectIndex:
-		n.list.Select(int(msg))
+		case key.Matches(msg, keys.GlobalKeys.Prev):
+			if n.listModel.Index() > 0 {
+				n.listModel.Select(n.listModel.Index() - 1)
+			}
+			cmd = func() tea.Msg {
+				// TODO: send view enum nav command
+				return commands.PageNavigationMsg(n.listModel.Index())
+			}
+			return n, cmd
+		}
 	}
 
-	return n, nil
-}
-
-func (n *Nav) Init() tea.Cmd {
-	return nil
-}
-
-func (n *Nav) Width() int {
-	return n.list.Width()
+	return n, tea.Batch(cmds...)
 }
