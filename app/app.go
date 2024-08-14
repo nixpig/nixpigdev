@@ -39,11 +39,11 @@ type appModel struct {
 func New(pty ssh.Pty, renderer *lipgloss.Renderer) appModel {
 	pageModels := []tea.Model{
 		pages.NewHome(renderer, md),
-		// pages.NewScrapbook(renderer, md),
-		// pages.NewProjects(renderer, md),
-		// pages.NewResume(renderer, md),
+		pages.NewScrapbook(renderer, md),
+		pages.NewProjects(renderer, md),
+		pages.NewResume(renderer, md),
 		pages.NewUses(renderer, md),
-		// pages.NewContact(renderer, md),
+		pages.NewContact(renderer, md),
 	}
 
 	viewportModel := viewport.New(0, 0)
@@ -99,6 +99,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.viewportModel.Width = msg.Width - navWidth
 		m.viewportModel.Height = msg.Height - heightOffset
+		m.pages[m.activePage].Init()
 		m.viewportModel.SetContent(m.pages[m.activePage].View())
 
 		m.ready = true
@@ -108,7 +109,16 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case commands.PageNavigationMsg:
 		if int(msg) >= 0 || int(msg) < len(m.pages) {
 			m.activePage = int(msg)
+			m.viewportModel.Width = m.width - navWidth
+			m.viewportModel.Height = m.height - heightOffset
+
+			m.pages[m.activePage], cmd = m.pages[m.activePage].Update(commands.SectionSizeMsg{
+				Width:  m.width - navWidth,
+				Height: m.height - heightOffset,
+			})
+
 			m.viewportModel.SetContent(m.pages[m.activePage].View())
+			m.viewportModel.GotoTop()
 		}
 		return m, nil
 	}
@@ -118,6 +128,13 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	m.footerModel, cmd = m.footerModel.Update(msg)
 	cmds = append(cmds, cmd)
+
+	m.pages[m.activePage], cmd = m.pages[m.activePage].Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.viewportModel.Width = m.width - navWidth
+	m.viewportModel.Height = m.height - heightOffset
+	m.viewportModel.SetContent(m.pages[m.activePage].View())
 
 	return m, tea.Batch(cmds...)
 }

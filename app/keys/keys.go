@@ -68,7 +68,7 @@ func (fk formKeys) FullHelp() [][]key.Binding {
 var FormKeys = formKeys{
 	Enter: key.NewBinding(
 		key.WithKeys("enter"),
-		key.WithHelp("enter", "submit"),
+		key.WithHelp("enter", "next/submit"),
 	),
 	Next: key.NewBinding(
 		key.WithKeys("down"),

@@ -9,7 +9,6 @@ import (
 )
 
 type usesModel struct {
-	style        lipgloss.Style
 	title        string
 	description  string
 	renderer     *lipgloss.Renderer
@@ -22,7 +21,6 @@ func NewUses(
 	md mdrenderer,
 ) usesModel {
 	return usesModel{
-		style:       renderer.NewStyle(),
 		title:       "Uses",
 		description: "Tools of the trade",
 		renderer:    renderer,
