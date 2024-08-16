@@ -26,7 +26,6 @@ type contactModel struct {
 }
 
 func NewContact(
-
 	renderer *lipgloss.Renderer,
 	md mdrenderer,
 ) contactModel {
@@ -50,7 +49,6 @@ func (c contactModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return c, nil
 
 	case tea.KeyMsg:
-
 		_, cmd := c.form.Update(msg)
 		return c, cmd
 	}
@@ -133,39 +131,46 @@ func NewForm() form {
 }
 
 func (m *form) Init() tea.Cmd {
-	return textinput.Blink
+	return nil
 }
 
 func (m *form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
+		case key.Matches(msg, keys.FormKeys.Next):
+			if m.focusIndex == len(m.inputs) {
+				m.focusIndex = 0
+			} else {
+				m.focusIndex++
+			}
 		case key.Matches(msg, keys.FormKeys.Enter):
 			if m.focusIndex == len(m.inputs) {
 				m.validationErrors = []string{}
 				if len(m.inputs[0].Value()) == 0 {
-					m.validationErrors = append(m.validationErrors, "name: no name provided")
+					m.validationErrors = append(
+						m.validationErrors,
+						"name: no name provided",
+					)
 				}
 				if _, err := mail.ParseAddress(m.inputs[1].Value()); err != nil {
-					m.validationErrors = append(m.validationErrors, err.Error())
+					m.validationErrors = append(
+						m.validationErrors,
+						err.Error(),
+					)
 				}
 				if len(m.inputs[2].Value()) == 0 {
-					m.validationErrors = append(m.validationErrors, "message: no message provided")
+					m.validationErrors = append(
+						m.validationErrors,
+						"message: no message provided",
+					)
 				}
 
-				fmt.Println("validate and submit form")
+				if len(m.validationErrors) == 0 {
+					fmt.Println("submit form")
+				}
 			} else {
 				m.focusIndex++
-			}
-
-		case key.Matches(msg, keys.FormKeys.Next):
-			if m.focusIndex < len(m.inputs) {
-				m.focusIndex++
-			}
-
-		case key.Matches(msg, keys.FormKeys.Prev):
-			if m.focusIndex > 0 {
-				m.focusIndex--
 			}
 		}
 	}
@@ -193,12 +198,25 @@ func (m *form) updateInputs(msg tea.Msg) tea.Cmd {
 }
 
 func (m *form) View(renderer *lipgloss.Renderer) string {
-	focusedStyle := renderer.NewStyle().Foreground(lipgloss.Color(theme.Dracula.Pink))
-	blurredStyle := renderer.NewStyle().Foreground(lipgloss.Color(theme.Dracula.Faint))
-	noStyle := renderer.NewStyle().Foreground(lipgloss.Color(theme.Dracula.Foreground))
+	focusedStyle := renderer.
+		NewStyle().
+		Foreground(lipgloss.Color(theme.Dracula.Pink))
+
+	blurredStyle := renderer.
+		NewStyle().
+		Foreground(lipgloss.Color(theme.Dracula.Faint))
+
+	noStyle := renderer.
+		NewStyle().
+		Foreground(lipgloss.Color(theme.Dracula.Foreground))
 
 	focusedButton := focusedStyle.Render("[ Submit ]")
-	blurredButton := fmt.Sprintf("%s %s %s", noStyle.Render("["), blurredStyle.Render("Submit"), noStyle.Render("]"))
+	blurredButton := fmt.Sprintf(
+		"%s %s %s",
+		noStyle.Render("["),
+		blurredStyle.Render("Submit"),
+		noStyle.Render("]"),
+	)
 
 	var b strings.Builder
 
@@ -213,14 +231,17 @@ func (m *form) View(renderer *lipgloss.Renderer) string {
 		}
 		m.inputs[i].PlaceholderStyle = blurredStyle
 		b.WriteString(m.inputs[i].View())
-		if i < len(m.inputs)-1 {
-			b.WriteRune('\n')
-		}
+		b.WriteRune('\n')
 	}
 
 	if len(m.validationErrors) > 0 {
 		for _, e := range m.validationErrors {
-			b.WriteString(renderer.NewStyle().Foreground(lipgloss.Color(theme.Dracula.Red)).Render(fmt.Sprintf("\n⚠ %s", e)))
+			b.WriteString(
+				renderer.
+					NewStyle().
+					Foreground(lipgloss.Color(theme.Dracula.Red)).
+					Render(fmt.Sprintf("\n⚠ %s", e)),
+			)
 		}
 	}
 
@@ -228,7 +249,15 @@ func (m *form) View(renderer *lipgloss.Renderer) string {
 	if m.focusIndex == len(m.inputs) {
 		button = &focusedButton
 	}
-	fmt.Fprintf(&b, "\n\n%s\n\n%s", *button, m.helpModel.View(m.helpKeyMap))
 
-	return renderer.NewStyle().PaddingLeft(2).PaddingRight(2).Render(b.String())
+	b.WriteString(fmt.Sprintf(
+		"\n%s\n\n%s",
+		*button,
+		m.helpModel.View(m.helpKeyMap),
+	))
+
+	return renderer.NewStyle().
+		PaddingLeft(2).
+		PaddingRight(2).
+		Render(b.String())
 }

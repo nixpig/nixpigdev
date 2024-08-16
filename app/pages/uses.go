@@ -55,10 +55,10 @@ I'm a simple person, with simple needs. I spend most of my time in the terminal,
 - **Terminal:** [Terminator](https://gnome-terminator.org)
 - **Shell:** [Bash](https://www.gnu.org/software/bash)
 - **Prompt:** [Starship](https://starship.rs)
-- **Multiplexer:** [Tmux](https://github.com/tmux/tmux)
+- **Multiplexer:** [tmux](https://github.com/tmux/tmux)
 - **Window manager:** [i3](https://i3wm.org)
 - **Dotfiles manager:** [yadm](https://yadm.io)
-- **Font:** [Operator Mono](https://typography.com/fonts/operator/overview)
+- **Font:** [Operator Mono](https://typography.com/fonts/operator)
 - **Browser:** [Chromium](https://www.chromium.org) with [Vimium](https://vimium.github.io)
 
 ## Dotfiles

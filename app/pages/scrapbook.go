@@ -3,6 +3,7 @@ package pages
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
@@ -12,11 +13,10 @@ import (
 	"github.com/nixpig/nixpigdev/app/theme"
 )
 
-type blogPostsMsg *gofeed.Feed
-
 type blogItem struct {
 	title string
 	link  string
+	date  time.Time
 }
 
 type scrapbookModel struct {
@@ -44,12 +44,12 @@ func NewScrapbook(
 
 func (s scrapbookModel) Init() tea.Cmd {
 	fmt.Println("initialising scrapbook")
-	return s.getBlogPosts
+	return getBlogPosts()
 }
 
 func (s scrapbookModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case blogPostsMsg:
+	case commands.FeedFetchMsg:
 		fmt.Println("received blogs")
 		s.blogItems = []blogItem{}
 		if msg == nil {
@@ -63,7 +63,7 @@ func (s scrapbookModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		return s, nil
+		return nil, nil
 
 	case commands.SectionSizeMsg:
 		s.contentWidth = msg.Width
@@ -119,13 +119,15 @@ func (s scrapbookModel) FilterValue() string {
 	return fmt.Sprintf("%s %s", s.title, s.description)
 }
 
-func (s scrapbookModel) getBlogPosts() tea.Msg {
-	fmt.Println("fetching blogs...")
-	fetched, err := fp.ParseURL("https://medium.com/feed/@nixpig")
-	if err != nil {
-		fmt.Println(fmt.Errorf("failed to fetch feed: %w", err))
-	}
+func getBlogPosts() tea.Cmd {
+	return func() tea.Msg {
+		fmt.Println("fetching blogs...")
+		fetched, err := fp.ParseURL("https://medium.com/feed/@nixpig")
+		if err != nil {
+			fmt.Println(fmt.Errorf("failed to fetch feed: %w", err))
+		}
 
-	fmt.Println("fetched blogs.")
-	return blogPostsMsg(fetched)
+		fmt.Println("fetched blogs.")
+		return commands.FeedFetchMsg(fetched)
+	}
 }
