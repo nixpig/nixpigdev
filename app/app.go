@@ -60,6 +60,7 @@ func New(pty ssh.Pty, renderer *lipgloss.Renderer) appModel {
 }
 
 func (m appModel) Init() tea.Cmd {
+	m.pages[m.activePage].Init()
 	return nil
 }
 
@@ -68,6 +69,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.GlobalKeys.Quit):
@@ -99,7 +101,6 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.viewportModel.Width = msg.Width - navWidth
 		m.viewportModel.Height = msg.Height - heightOffset
-		m.pages[m.activePage].Init()
 		m.viewportModel.SetContent(m.pages[m.activePage].View())
 
 		m.ready = true
@@ -117,10 +118,13 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				Height: m.height - heightOffset,
 			})
 
+			m.pages[m.activePage].Init()
+
 			m.viewportModel.SetContent(m.pages[m.activePage].View())
 			m.viewportModel.GotoTop()
 		}
 		return m, nil
+
 	}
 
 	m.navModel, cmd = m.navModel.Update(msg)

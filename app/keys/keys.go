@@ -48,16 +48,14 @@ var GlobalKeys = globalKeys{
 }
 
 type formKeys struct {
-	Enter key.Binding
 	Next  key.Binding
-	Prev  key.Binding
+	Enter key.Binding
 }
 
 func (fk formKeys) ShortHelp() []key.Binding {
 	return []key.Binding{
-		fk.Enter,
 		fk.Next,
-		fk.Prev,
+		fk.Enter,
 	}
 }
 
@@ -66,16 +64,12 @@ func (fk formKeys) FullHelp() [][]key.Binding {
 }
 
 var FormKeys = formKeys{
+	Next: key.NewBinding(
+		key.WithKeys("tab"),
+		key.WithHelp("tab", "next"),
+	),
 	Enter: key.NewBinding(
 		key.WithKeys("enter"),
 		key.WithHelp("enter", "next/submit"),
-	),
-	Next: key.NewBinding(
-		key.WithKeys("down"),
-		key.WithHelp("⬇", "next"),
-	),
-	Prev: key.NewBinding(
-		key.WithKeys("up"),
-		key.WithHelp("⬆", "prev"),
 	),
 }
