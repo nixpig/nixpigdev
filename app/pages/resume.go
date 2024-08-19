@@ -52,7 +52,8 @@ func (r resumeModel) View() string {
 Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.
 
 ## Skills
-- Architectural design and hands-on coding
+- Architectural design 
+- Hands-on coding
 - Leading technical intiatives
 
 ## Experience
