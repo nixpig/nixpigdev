@@ -77,11 +77,9 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, keys.GlobalKeys.Down):
 			m.viewportModel.LineDown(1)
-			return m, nil
 
 		case key.Matches(msg, keys.GlobalKeys.Up):
 			m.viewportModel.LineUp(1)
-			return m, nil
 		}
 
 	case tea.WindowSizeMsg:

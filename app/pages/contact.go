@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -81,11 +82,15 @@ func (c contactModel) FilterValue() string {
 	return fmt.Sprintf("%s %s", c.title, c.description)
 }
 
-var ()
+type formInputs struct {
+	name    textinput.Model
+	email   textinput.Model
+	message textarea.Model
+}
 
 type form struct {
 	focusIndex       int
-	inputs           []textinput.Model
+	inputs           formInputs
 	cursorMode       cursor.Mode
 	helpKeyMap       help.KeyMap
 	helpModel        help.Model
@@ -98,33 +103,30 @@ func NewForm() form {
 	helpModel.Styles.ShortKey = lipgloss.NewStyle().Bold(true)
 	helpModel.Styles.ShortDesc = lipgloss.NewStyle().Faint(true)
 
+	nameInput := textinput.New()
+	nameInput.CharLimit = 32
+	nameInput.Prompt = "Name:    "
+	nameInput.Placeholder = "janedoe"
+	nameInput.Focus()
+
+	emailInput := textinput.New()
+	emailInput.CharLimit = 64
+	emailInput.Prompt = "Email:   "
+	emailInput.Placeholder = "jane@example.com"
+
+	messageInput := textarea.New()
+	messageInput.ShowLineNumbers = false
+	messageInput.Placeholder = "Hi, there!"
+	messageInput.CharLimit = 1024
+
 	m := form{
-		inputs:     make([]textinput.Model, 3),
+		inputs: formInputs{
+			name:    nameInput,
+			email:   emailInput,
+			message: messageInput,
+		},
 		helpKeyMap: keys.FormKeys,
 		helpModel:  helpModel,
-	}
-
-	var t textinput.Model
-	for i := range m.inputs {
-		t = textinput.New()
-		t.CharLimit = 32
-
-		switch i {
-		case 0:
-			t.Prompt = "Name:    "
-			t.Placeholder = "janedoe"
-			t.Focus()
-		case 1:
-			t.Prompt = "Email:   "
-			t.Placeholder = "jane@example.com"
-			t.CharLimit = 64
-		case 2:
-			t.Prompt = "Message: "
-			t.Placeholder = "Hi, there!"
-			t.CharLimit = 1024
-		}
-
-		m.inputs[i] = t
 	}
 
 	return m
@@ -139,27 +141,27 @@ func (m *form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.FormKeys.Next):
-			if m.focusIndex == len(m.inputs) {
+			if m.focusIndex == 3 {
 				m.focusIndex = 0
 			} else {
 				m.focusIndex++
 			}
 		case key.Matches(msg, keys.FormKeys.Enter):
-			if m.focusIndex == len(m.inputs) {
+			if m.focusIndex == 3 {
 				m.validationErrors = []string{}
-				if len(m.inputs[0].Value()) == 0 {
+				if len(m.inputs.name.Value()) == 0 {
 					m.validationErrors = append(
 						m.validationErrors,
 						"name: no name provided",
 					)
 				}
-				if _, err := mail.ParseAddress(m.inputs[1].Value()); err != nil {
+				if _, err := mail.ParseAddress(m.inputs.email.Value()); err != nil {
 					m.validationErrors = append(
 						m.validationErrors,
 						err.Error(),
 					)
 				}
-				if len(m.inputs[2].Value()) == 0 {
+				if len(m.inputs.message.Value()) == 0 {
 					m.validationErrors = append(
 						m.validationErrors,
 						"message: no message provided",
@@ -181,18 +183,22 @@ func (m *form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *form) updateInputs(msg tea.Msg) tea.Cmd {
-	for i := 0; i <= len(m.inputs)-1; i++ {
-		if i == m.focusIndex {
-			m.inputs[i].Focus()
-			continue
-		}
+	m.inputs.name.Blur()
+	m.inputs.email.Blur()
+	m.inputs.message.Blur()
 
-		m.inputs[i].Blur()
+	switch m.focusIndex {
+	case 0:
+		m.inputs.name.Focus()
+	case 1:
+		m.inputs.email.Focus()
+	case 2:
+		m.inputs.message.Focus()
 	}
 
-	for i := range m.inputs {
-		m.inputs[i], _ = m.inputs[i].Update(msg)
-	}
+	m.inputs.name, _ = m.inputs.name.Update(msg)
+	m.inputs.email, _ = m.inputs.email.Update(msg)
+	m.inputs.message, _ = m.inputs.message.Update(msg)
 
 	return nil
 }
@@ -220,19 +226,33 @@ func (m *form) View(renderer *lipgloss.Renderer) string {
 
 	var b strings.Builder
 
-	for i := range m.inputs {
-		if i == m.focusIndex {
-			m.inputs[i].Cursor.Style = focusedStyle
-			m.inputs[i].TextStyle = focusedStyle
-			m.inputs[i].PromptStyle = focusedStyle
-		} else {
-			m.inputs[i].TextStyle = noStyle
-			m.inputs[i].PromptStyle = noStyle
-		}
-		m.inputs[i].PlaceholderStyle = blurredStyle
-		b.WriteString(m.inputs[i].View())
-		b.WriteRune('\n')
+	m.inputs.name.TextStyle = noStyle
+	m.inputs.name.PromptStyle = noStyle
+	m.inputs.email.TextStyle = noStyle
+	m.inputs.email.PromptStyle = noStyle
+
+	switch m.focusIndex {
+	case 0:
+		m.inputs.name.Cursor.Style = focusedStyle
+		m.inputs.name.TextStyle = focusedStyle
+		m.inputs.name.PromptStyle = focusedStyle
+
+	case 1:
+		m.inputs.email.Cursor.Style = focusedStyle
+		m.inputs.email.TextStyle = focusedStyle
+		m.inputs.email.PromptStyle = focusedStyle
+
+	case 2:
+		m.inputs.message.Cursor.Style = focusedStyle
 	}
+
+	m.inputs.name.PlaceholderStyle = blurredStyle
+	m.inputs.email.PlaceholderStyle = blurredStyle
+
+	b.WriteString(fmt.Sprintf("%s\n", m.inputs.name.View()))
+	b.WriteString(fmt.Sprintf("%s\n", m.inputs.email.View()))
+	b.WriteString(noStyle.Render("Message:\n"))
+	b.WriteString(fmt.Sprintf("\n%s\n", m.inputs.message.View()))
 
 	if len(m.validationErrors) > 0 {
 		for _, e := range m.validationErrors {
@@ -243,10 +263,12 @@ func (m *form) View(renderer *lipgloss.Renderer) string {
 					Render(fmt.Sprintf("\n⚠ %s", e)),
 			)
 		}
+
+		b.WriteRune('\n')
 	}
 
 	button := &blurredButton
-	if m.focusIndex == len(m.inputs) {
+	if m.focusIndex == 3 {
 		button = &focusedButton
 	}
 
