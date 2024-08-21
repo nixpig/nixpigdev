@@ -7,7 +7,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nixpig/nixpigdev/app/commands"
-	"github.com/nixpig/nixpigdev/app/theme"
 )
 
 type homeModel struct {
@@ -36,33 +35,13 @@ func (h homeModel) Init() tea.Cmd {
 }
 
 func (h homeModel) View() string {
-	work := h.renderer.NewStyle().
-		Width(h.contentWidth / 2).
-		PaddingLeft(1).
-		PaddingRight(1).
-		Render("My day job consists mostly of TypeScript and Java on Azure.")
-
-	bar := h.renderer.NewStyle().
-		Width(h.contentWidth / 2).
-		PaddingLeft(1).
-		PaddingRight(1).
-		Render("In my free time, I'm currently enjoying learning Go and dabbling in Rust.")
-
-	baz := lipgloss.JoinHorizontal(lipgloss.Top, work, bar)
-
-	qux := h.renderer.NewStyle().Foreground(lipgloss.Color(theme.Dracula.Foreground)).PaddingLeft(1).PaddingRight(1).Render(baz)
-
 	return strings.Join(
 		[]string{
 			h.md(`
 # Home
 
 I’m a software engineer from the UK, currently working as a _Senior Technical Lead_.
-			`, h.contentWidth),
 
-			qux,
-			"\n",
-			h.md(`
 I live in the countryside with my beautiful partner, cats and dog, and enjoy going to the gym and binge-watching Netflix.
 
 **Fun facts**

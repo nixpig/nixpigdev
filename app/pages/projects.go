@@ -46,6 +46,8 @@ func (p projectsModel) View() string {
 	return p.md(`
 # Projects
 
+## Personal projects
+
 [syringe.sh](https://github.com/nixpig/syringe.sh) • _Go_
 
 Self-hostable distributed database-per-user encrypted secrets management over SSH.
@@ -57,6 +59,11 @@ Super-simple to configure HTTP/S reverse proxy for local dev; supports HTTP/1.1,
 [corkscrew](https://github.com/nixpig/corkscrew) • _Rust_
 
 Batch executor for HTTP requests configured in a simple YAML schema.
+
+
+## Open source
+
+		...
 			`, p.contentWidth)
 }
 

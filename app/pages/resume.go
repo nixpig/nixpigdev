@@ -49,8 +49,6 @@ func (r resumeModel) View() string {
 		r.md(`
 # Résumé
 
-Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.
-
 ## Skills
 - Architectural design 
 - Hands-on coding
@@ -76,7 +74,7 @@ Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint 
 
 **University (2012 - 2014)** - _Engineering, Foundation Deg._
 
-**College (2011 - 2012)** - _ICT_
+**College (2011 - 2012)** - _ICT, Access to HE_
 				`, r.contentWidth),
 	}, "")
 }

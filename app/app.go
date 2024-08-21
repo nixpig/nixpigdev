@@ -69,7 +69,6 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.GlobalKeys.Quit):
@@ -116,13 +115,14 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				Height: m.height - heightOffset,
 			})
 
-			m.pages[m.activePage].Init()
+			cmd = m.pages[m.activePage].Init()
+			cmds = append(cmds, cmd)
 
 			m.viewportModel.SetContent(m.pages[m.activePage].View())
 			m.viewportModel.GotoTop()
 		}
-		return m, nil
 
+		return m, tea.Batch(cmds...)
 	}
 
 	m.navModel, cmd = m.navModel.Update(msg)

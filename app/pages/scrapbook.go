@@ -43,17 +43,15 @@ func NewScrapbook(
 }
 
 func (s scrapbookModel) Init() tea.Cmd {
-	fmt.Println("initialising scrapbook")
 	return getBlogPosts()
 }
 
 func (s scrapbookModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case commands.FeedFetchMsg:
-		fmt.Println("received blogs")
+	case commands.FeedFetchSuccessMsg:
 		s.blogItems = []blogItem{}
 		if msg == nil {
-			fmt.Println("blog posts msg is nil")
+			fmt.Println("failed to load blog posts")
 		} else {
 			for _, item := range msg.Items {
 				s.blogItems = append(s.blogItems, blogItem{
@@ -63,7 +61,11 @@ func (s scrapbookModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		return nil, nil
+		return s, nil
+
+	case commands.FeedFetchErrMsg:
+		fmt.Println(msg)
+		return s, nil
 
 	case commands.SectionSizeMsg:
 		s.contentWidth = msg.Width
@@ -121,13 +123,11 @@ func (s scrapbookModel) FilterValue() string {
 
 func getBlogPosts() tea.Cmd {
 	return func() tea.Msg {
-		fmt.Println("fetching blogs...")
 		fetched, err := fp.ParseURL("https://medium.com/feed/@nixpig")
 		if err != nil {
-			fmt.Println(fmt.Errorf("failed to fetch feed: %w", err))
+			return commands.FeedFetchErrMsg(fmt.Errorf("failed to fetch blog feed: %w", err))
 		}
 
-		fmt.Println("fetched blogs.")
-		return commands.FeedFetchMsg(fetched)
+		return commands.FeedFetchSuccessMsg(fetched)
 	}
 }
