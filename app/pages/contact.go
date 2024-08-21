@@ -169,7 +169,11 @@ func (m *form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				if len(m.validationErrors) == 0 {
+					// TODO: send command to send email
 					fmt.Println("submit form")
+					fmt.Println(m.inputs.name.Value())
+					fmt.Println(m.inputs.email.Value())
+					fmt.Println(m.inputs.message.Value())
 				}
 			} else {
 				m.focusIndex++
@@ -190,15 +194,14 @@ func (m *form) updateInputs(msg tea.Msg) tea.Cmd {
 	switch m.focusIndex {
 	case 0:
 		m.inputs.name.Focus()
+		m.inputs.name, _ = m.inputs.name.Update(msg)
 	case 1:
 		m.inputs.email.Focus()
+		m.inputs.email, _ = m.inputs.email.Update(msg)
 	case 2:
 		m.inputs.message.Focus()
+		m.inputs.message, _ = m.inputs.message.Update(msg)
 	}
-
-	m.inputs.name, _ = m.inputs.name.Update(msg)
-	m.inputs.email, _ = m.inputs.email.Update(msg)
-	m.inputs.message, _ = m.inputs.message.Update(msg)
 
 	return nil
 }

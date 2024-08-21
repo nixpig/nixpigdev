@@ -9,4 +9,5 @@ type SectionSizeMsg struct {
 	Height int
 }
 
-type FeedFetchMsg *gofeed.Feed
+type FeedFetchSuccessMsg *gofeed.Feed
+type FeedFetchErrMsg error
