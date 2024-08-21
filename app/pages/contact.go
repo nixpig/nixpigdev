@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,7 +21,7 @@ import (
 type contactModel struct {
 	title        string
 	description  string
-	form         form
+	formModel    tea.Model
 	renderer     *lipgloss.Renderer
 	md           mdrenderer
 	contentWidth int
@@ -33,7 +34,7 @@ func NewContact(
 	return contactModel{
 		title:       "Contact",
 		description: "Come say hi!",
-		form:        NewForm(),
+		formModel:   NewForm(renderer),
 		renderer:    renderer,
 		md:          md,
 	}
@@ -44,17 +45,18 @@ func (c contactModel) Init() tea.Cmd {
 }
 
 func (c contactModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
 	case commands.SectionSizeMsg:
 		c.contentWidth = msg.Width
 		return c, nil
-
-	case tea.KeyMsg:
-		_, cmd := c.form.Update(msg)
-		return c, cmd
 	}
 
-	return c, nil
+	c.formModel, cmd = c.formModel.Update(msg)
+	cmds = append(cmds, cmd)
+	return c, tea.Batch(cmds...)
 }
 
 func (c contactModel) View() string {
@@ -66,7 +68,7 @@ Feel free to reach out and say "Hi!"
 
 **✉ Email:** [hi@nixpig.dev](mailto:hi@nixpig.dev)`, c.contentWidth),
 
-		c.form.View(c.renderer),
+		c.formModel.View(),
 	}, "")
 }
 
@@ -95,9 +97,12 @@ type form struct {
 	helpKeyMap       help.KeyMap
 	helpModel        help.Model
 	validationErrors []string
+	sending          bool
+	spinner          spinner.Model
+	renderer         *lipgloss.Renderer
 }
 
-func NewForm() form {
+func NewForm(renderer *lipgloss.Renderer) form {
 	helpModel := help.New()
 	helpModel.ShortSeparator = " • "
 	helpModel.Styles.ShortKey = lipgloss.NewStyle().Bold(true)
@@ -127,18 +132,51 @@ func NewForm() form {
 		},
 		helpKeyMap: keys.FormKeys,
 		helpModel:  helpModel,
+		sending:    false,
+		spinner:    newSpinner(),
+		renderer:   renderer,
 	}
 
 	return m
 }
 
-func (m *form) Init() tea.Cmd {
+func newSpinner() spinner.Model {
+	s := spinner.New()
+	s.Spinner = spinner.Points
+	return s
+}
+
+func (m form) Init() tea.Cmd {
+	m.spinner.Tick()
 	return nil
 }
 
-func (m *form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
+	case commands.SendEmailSuccessMsg:
+		m.inputs.name.SetValue("")
+		m.inputs.email.SetValue("")
+		m.inputs.message.SetValue("")
+		m.validationErrors = []string{}
+		m.sending = false
+		m.spinner = newSpinner()
+
+	case commands.SendEmailErrMsg:
+		m.validationErrors = append(m.validationErrors, msg.Error())
+		m.sending = false
+		m.spinner = newSpinner()
+
+	case spinner.TickMsg:
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+
 	case tea.KeyMsg:
+		if m.sending {
+			return m, nil
+		}
 		switch {
 		case key.Matches(msg, keys.FormKeys.Next):
 			if m.focusIndex == 3 {
@@ -169,11 +207,15 @@ func (m *form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				if len(m.validationErrors) == 0 {
-					// TODO: send command to send email
-					fmt.Println("submit form")
-					fmt.Println(m.inputs.name.Value())
-					fmt.Println(m.inputs.email.Value())
-					fmt.Println(m.inputs.message.Value())
+					cmd = commands.SendEmail(
+						m.inputs.name.Value(),
+						m.inputs.email.Value(),
+						m.inputs.message.Value(),
+					)
+					m.sending = true
+
+					cmds = append(cmds, cmd)
+					cmds = append(cmds, m.spinner.Tick)
 				}
 			} else {
 				m.focusIndex++
@@ -183,7 +225,7 @@ func (m *form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	m.updateInputs(msg)
 
-	return nil, nil
+	return m, tea.Batch(cmds...)
 }
 
 func (m *form) updateInputs(msg tea.Msg) tea.Cmd {
@@ -206,24 +248,24 @@ func (m *form) updateInputs(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-func (m *form) View(renderer *lipgloss.Renderer) string {
-	focusedStyle := renderer.
+func (m form) View() string {
+	focusedStyle := m.renderer.
 		NewStyle().
 		Foreground(lipgloss.Color(theme.Dracula.Pink))
 
-	blurredStyle := renderer.
+	blurredStyle := m.renderer.
 		NewStyle().
 		Foreground(lipgloss.Color(theme.Dracula.Faint))
 
-	noStyle := renderer.
+	noStyle := m.renderer.
 		NewStyle().
 		Foreground(lipgloss.Color(theme.Dracula.Foreground))
 
-	focusedButton := focusedStyle.Render("[ Submit ]")
+	focusedButton := focusedStyle.Render("[ Send ]")
 	blurredButton := fmt.Sprintf(
 		"%s %s %s",
 		noStyle.Render("["),
-		blurredStyle.Render("Submit"),
+		blurredStyle.Render("Send"),
 		noStyle.Render("]"),
 	)
 
@@ -260,7 +302,7 @@ func (m *form) View(renderer *lipgloss.Renderer) string {
 	if len(m.validationErrors) > 0 {
 		for _, e := range m.validationErrors {
 			b.WriteString(
-				renderer.
+				m.renderer.
 					NewStyle().
 					Foreground(lipgloss.Color(theme.Dracula.Red)).
 					Render(fmt.Sprintf("\n⚠ %s", e)),
@@ -274,6 +316,15 @@ func (m *form) View(renderer *lipgloss.Renderer) string {
 	if m.focusIndex == 3 {
 		button = &focusedButton
 	}
+	if m.sending {
+		sending := fmt.Sprintf(
+			"%s %s %s",
+			blurredStyle.Render("["),
+			focusedStyle.Render(m.spinner.View()),
+			blurredStyle.Render("]"),
+		)
+		button = &sending
+	}
 
 	b.WriteString(fmt.Sprintf(
 		"\n%s\n\n%s",
@@ -281,7 +332,7 @@ func (m *form) View(renderer *lipgloss.Renderer) string {
 		m.helpModel.View(m.helpKeyMap),
 	))
 
-	return renderer.NewStyle().
+	return m.renderer.NewStyle().
 		PaddingLeft(2).
 		PaddingRight(2).
 		Render(b.String())
