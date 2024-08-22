@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+	"os"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -8,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/ssh"
+	"github.com/joho/godotenv"
 	"github.com/nixpig/nixpigdev/app/commands"
 	"github.com/nixpig/nixpigdev/app/keys"
 	"github.com/nixpig/nixpigdev/app/pages"
@@ -60,6 +63,12 @@ func New(pty ssh.Pty, renderer *lipgloss.Renderer) appModel {
 }
 
 func (m appModel) Init() tea.Cmd {
+	err := godotenv.Load(".env")
+	if err != nil {
+		fmt.Println("failed to load .env")
+		os.Exit(1)
+	}
+
 	m.pages[m.activePage].Init()
 	return nil
 }

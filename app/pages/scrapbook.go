@@ -28,8 +28,6 @@ type scrapbookModel struct {
 	contentWidth int
 }
 
-var fp = gofeed.NewParser()
-
 func NewScrapbook(
 	renderer *lipgloss.Renderer,
 	md mdrenderer,
@@ -43,12 +41,13 @@ func NewScrapbook(
 }
 
 func (s scrapbookModel) Init() tea.Cmd {
-	return getBlogPosts()
+	fp := gofeed.NewParser()
+	return commands.FetchFeed(fp)
 }
 
 func (s scrapbookModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case commands.FeedFetchSuccessMsg:
+	case commands.FetchFeedSuccessMsg:
 		s.blogItems = []blogItem{}
 		if msg == nil {
 			fmt.Println("failed to load blog posts")
@@ -63,7 +62,7 @@ func (s scrapbookModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return s, nil
 
-	case commands.FeedFetchErrMsg:
+	case commands.FetchFeedErrMsg:
 		fmt.Println(msg)
 		return s, nil
 
@@ -119,15 +118,4 @@ func (s scrapbookModel) Description() string {
 
 func (s scrapbookModel) FilterValue() string {
 	return fmt.Sprintf("%s %s", s.title, s.description)
-}
-
-func getBlogPosts() tea.Cmd {
-	return func() tea.Msg {
-		fetched, err := fp.ParseURL("https://medium.com/feed/@nixpig")
-		if err != nil {
-			return commands.FeedFetchErrMsg(fmt.Errorf("failed to fetch blog feed: %w", err))
-		}
-
-		return commands.FeedFetchSuccessMsg(fetched)
-	}
 }
