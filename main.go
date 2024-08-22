@@ -70,8 +70,9 @@ func main() {
 			return
 		}
 
-		index, err := os.ReadFile("./web/index.html")
+		index, err := os.ReadFile("web/index.html")
 		if err != nil {
+			fmt.Println(fmt.Errorf("read file: %w", err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

@@ -14,8 +14,12 @@ FROM scratch
 WORKDIR /usr/src/app
 
 COPY --from=builder /run-app /usr/local/bin/
-COPY --from=builder /usr/src/app/.ssh/id_ed25519 /usr/src/app/.ssh/
-COPY --from=builder /usr/src/app/web /usr/src/app/
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /usr/src/app/.ssh/id_ed25519 /usr/src/app/.ssh/id_ed25519
+COPY --from=builder /usr/src/app/web/index.html /usr/src/app/web/index.html
+COPY --from=builder /usr/src/app/.env /usr/src/app/.env
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+EXPOSE 8080
+EXPOSE 23234
 
 CMD ["run-app"]
