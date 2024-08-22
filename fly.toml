@@ -16,12 +16,14 @@ primary_region = 'lhr'
 [[services]]
   internal_port = 8080
   protocol = 'tcp'
-  force_https = true
   auto_stop_machines = true
   auto_start_machines = true
   [[services.ports]]
+    force_https = true
+    handlers = ["http"]
     port = 80
   [[services.ports]]
+    handlers = ["tls", "http"]
     port = 443
 
 [[vm]]
