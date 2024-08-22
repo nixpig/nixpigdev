@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -21,7 +23,8 @@ import (
 
 const (
 	hostname = "0.0.0.0"
-	port     = "23234"
+	ssh_port = "23234"
+	web_port = "8080"
 )
 
 // TODO: recover from panics
@@ -35,8 +38,8 @@ func main() {
 			TimeFormat: "2006-01-02T15:04:05.999Z07:00",
 		}).With().Timestamp().Logger()
 
-	s, err := wish.NewServer(
-		wish.WithAddress(net.JoinHostPort(hostname, port)),
+	sshServer, err := wish.NewServer(
+		wish.WithAddress(net.JoinHostPort(hostname, ssh_port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
 		wish.WithMiddleware(
 			bubbletea.Middleware(teaHandler),
@@ -53,9 +56,40 @@ func main() {
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		logger.Info().Str("host", hostname).Str("port", port).Msg("starting server")
-		if err := s.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
-			logger.Error().Err(err).Msg("failed to start server")
+		logger.Info().Str("host", hostname).Str("port", ssh_port).Msg("starting ssh server")
+		if err := sshServer.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+			logger.Error().Err(err).Msg("failed to start ssh server")
+			done <- nil
+		}
+	}()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.Redirect(w, r, "/", http.StatusMovedPermanently)
+			return
+		}
+
+		index, err := os.ReadFile("./web/index.html")
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Write(index)
+	})
+
+	webServer := http.Server{
+		Addr:         fmt.Sprintf(":%v", web_port),
+		Handler:      mux,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
+	}
+
+	go func() {
+		logger.Info().Str("host", hostname).Str("port", web_port).Msg("starting web server")
+		if err := webServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error().Err(err).Msg("failed to start web server")
 			done <- nil
 		}
 	}()
@@ -66,7 +100,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := s.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+	if err := sshServer.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
 		logger.Error().Err(err).Msg("failed to shutdown server gracefully")
 	}
 }
