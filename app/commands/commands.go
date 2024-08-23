@@ -2,10 +2,14 @@ package commands
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"net/smtp"
 	"os"
+	"slices"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -24,6 +28,14 @@ type FetchFeedErrMsg error
 
 type SendEmailSuccessMsg string
 type SendEmailErrMsg error
+
+type FetchProjectsSuccessMsg []struct {
+	Name        string   `json:"name"`
+	HTMLURL     string   `json:"html_url"`
+	Description string   `json:"description"`
+	Topics      []string `json:"topics"`
+}
+type FetchProjectErrMsg error
 
 func FetchFeed(fp *gofeed.Parser) tea.Cmd {
 	return func() tea.Msg {
@@ -82,5 +94,36 @@ func SendEmail(name, email, message string) tea.Cmd {
 		}
 
 		return SendEmailSuccessMsg("email sent")
+	}
+}
+
+func FetchProjects() tea.Cmd {
+	return func() tea.Msg {
+		res, err := http.Get("https://api.github.com/users/nixpig/repos?sort=updated")
+		if err != nil || res.StatusCode != http.StatusOK {
+			return FetchProjectErrMsg(err)
+		}
+
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return FetchProjectErrMsg(err)
+		}
+
+		var projects FetchProjectsSuccessMsg
+		var filteredProjects FetchProjectsSuccessMsg
+
+		if err := json.Unmarshal(body, &projects); err != nil {
+			return FetchProjectErrMsg(err)
+		}
+
+		for _, p := range projects {
+			if slices.IndexFunc(p.Topics, func(t string) bool {
+				return t == "featured"
+			}) != -1 {
+				filteredProjects = append(filteredProjects, p)
+			}
+		}
+
+		return FetchProjectsSuccessMsg(filteredProjects)
 	}
 }
