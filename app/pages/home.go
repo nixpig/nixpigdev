@@ -42,7 +42,7 @@ func (h homeModel) View() string {
 
 I’m a software engineer from the UK, currently working as a _Senior Technical Lead_.
 
-I live in the countryside with my beautiful partner, cats and dog, and enjoy going to the gym and binge-watching Netflix.
+I live in the countryside with my beautiful partner, cats and dog.
 
 **Fun facts**
 - My day starts at 03:00am every morning.
