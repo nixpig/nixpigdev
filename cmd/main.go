@@ -16,8 +16,8 @@ import (
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/activeterm"
 	"github.com/charmbracelet/wish/bubbletea"
-	"github.com/nixpig/nixpigdev/app"
-	"github.com/nixpig/nixpigdev/logging"
+	app "github.com/nixpig/nixpigdev/internal"
+	"github.com/nixpig/nixpigdev/pkg/logging"
 	"github.com/rs/zerolog"
 )
 

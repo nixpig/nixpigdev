@@ -9,8 +9,8 @@ import (
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mmcdole/gofeed"
-	"github.com/nixpig/nixpigdev/app/commands"
-	"github.com/nixpig/nixpigdev/app/theme"
+	"github.com/nixpig/nixpigdev/internal/commands"
+	"github.com/nixpig/nixpigdev/pkg/theme"
 )
 
 type blogItem struct {

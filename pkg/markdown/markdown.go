@@ -1,4 +1,4 @@
-package app
+package markdown
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/glamour"
 )
 
-func md(content string, wrap int) string {
+func Render(content string, wrap int) string {
 	tr, err := glamour.NewTermRenderer(
 		glamour.WithWordWrap(wrap),
 		glamour.WithStylePath("dracula"),

@@ -12,7 +12,7 @@ audit:
 
 .PHONY: build
 build:
-	go build -o tmp/bin/nixpigdev main.go
+	go build -o tmp/bin/nixpigdev cmd/main.go
 
 .PHONY: watch
 watch:
