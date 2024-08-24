@@ -29,7 +29,8 @@ func NewNav(
 	for i, page := range pageModels {
 		p, ok := page.(list.Item)
 		if !ok {
-			fmt.Println("cannot type assert page to list item")
+			fmt.Println("cannot assert page as list item")
+			continue
 		}
 		listItems[i] = p
 	}
@@ -104,9 +105,6 @@ func (n navModel) View() string {
 }
 
 func (n navModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	var cmds []tea.Cmd
-
 	switch msg := msg.(type) {
 	case commands.SectionSizeMsg:
 		n.listModel.SetWidth(msg.Width)
@@ -118,23 +116,17 @@ func (n navModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if n.listModel.Index() < len(n.listModel.Items())-1 {
 				n.listModel.Select(n.listModel.Index() + 1)
 			}
-			cmd = func() tea.Msg {
-				// TODO: send view enum nav command
-				return commands.PageNavigationMsg(n.listModel.Index())
-			}
-			return n, cmd
+
+			return n, commands.NavigatePageCmd(n.listModel.Index())
 
 		case key.Matches(msg, keys.GlobalKeys.Prev):
 			if n.listModel.Index() > 0 {
 				n.listModel.Select(n.listModel.Index() - 1)
 			}
-			cmd = func() tea.Msg {
-				// TODO: send view enum nav command
-				return commands.PageNavigationMsg(n.listModel.Index())
-			}
-			return n, cmd
+
+			return n, commands.NavigatePageCmd(n.listModel.Index())
 		}
 	}
 
-	return n, tea.Batch(cmds...)
+	return n, nil
 }

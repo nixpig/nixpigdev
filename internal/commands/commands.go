@@ -16,7 +16,7 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
-type PageNavigationMsg int
+type NavigatePageMsg int
 
 type SectionSizeMsg struct {
 	Width  int
@@ -37,7 +37,13 @@ type FetchProjectsSuccessMsg []struct {
 }
 type FetchProjectErrMsg error
 
-func FetchFeed(fp *gofeed.Parser) tea.Cmd {
+func NavigatePageCmd(i int) tea.Cmd {
+	return func() tea.Msg {
+		return NavigatePageMsg(i)
+	}
+}
+
+func FetchFeedCmd(fp *gofeed.Parser) tea.Cmd {
 	return func() tea.Msg {
 		fetched, err := fp.ParseURL("https://medium.com/feed/@nixpig")
 		if err != nil {
@@ -48,7 +54,7 @@ func FetchFeed(fp *gofeed.Parser) tea.Cmd {
 	}
 }
 
-func SendEmail(name, email, message string) tea.Cmd {
+func SendEmailCmd(name, email, message string) tea.Cmd {
 	return func() tea.Msg {
 		identity := os.Getenv("SMTP_AUTH_IDENTITY")
 		username := os.Getenv("SMTP_AUTH_USERNAME")

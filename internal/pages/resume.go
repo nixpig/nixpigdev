@@ -7,25 +7,26 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nixpig/nixpigdev/internal/commands"
+	"github.com/nixpig/nixpigdev/pkg/markdown"
 )
 
 type resumeModel struct {
 	title        string
 	description  string
-	renderer     *lipgloss.Renderer
-	md           mdrenderer
+	termRenderer *lipgloss.Renderer
+	mdRenderer   markdown.Renderer
 	contentWidth int
 }
 
 func NewResume(
-	renderer *lipgloss.Renderer,
-	md mdrenderer,
+	termRenderer *lipgloss.Renderer,
+	mdRenderer markdown.Renderer,
 ) resumeModel {
 	return resumeModel{
-		title:       "Resume",
-		description: "Skills + experience",
-		renderer:    renderer,
-		md:          md,
+		title:        "Resume",
+		description:  "Skills + experience",
+		termRenderer: termRenderer,
+		mdRenderer:   mdRenderer,
 	}
 
 }
@@ -46,7 +47,7 @@ func (r resumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (r resumeModel) View() string {
 	return strings.Join([]string{
-		r.md(`
+		r.mdRenderer(`
 # Résumé
 
 ## Skills

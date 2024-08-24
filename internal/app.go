@@ -24,7 +24,7 @@ const (
 )
 
 type appModel struct {
-	renderer *lipgloss.Renderer
+	termRenderer *lipgloss.Renderer
 
 	term   string
 	width  int
@@ -40,14 +40,18 @@ type appModel struct {
 	activePage int
 }
 
-func New(pty ssh.Pty, renderer *lipgloss.Renderer) appModel {
+func New(
+	pty ssh.Pty,
+	termRenderer *lipgloss.Renderer,
+	mdRenderer markdown.Renderer,
+) appModel {
 	pageModels := []tea.Model{
-		pages.NewHome(renderer, markdown.Render),
-		pages.NewScrapbook(renderer, markdown.Render),
-		pages.NewProjects(renderer, markdown.Render),
-		pages.NewResume(renderer, markdown.Render),
-		pages.NewUses(renderer, markdown.Render),
-		pages.NewContact(renderer, markdown.Render),
+		pages.NewHome(termRenderer, mdRenderer),
+		pages.NewScrapbook(termRenderer, mdRenderer),
+		pages.NewProjects(termRenderer, mdRenderer),
+		pages.NewResume(termRenderer, mdRenderer),
+		pages.NewUses(termRenderer, mdRenderer),
+		pages.NewContact(termRenderer, mdRenderer),
 	}
 
 	viewportModel := viewport.New(0, 0)
@@ -56,8 +60,8 @@ func New(pty ssh.Pty, renderer *lipgloss.Renderer) appModel {
 		term:          pty.Term,
 		width:         pty.Window.Width,
 		height:        pty.Window.Height,
-		navModel:      sections.NewNav(renderer, pageModels),
-		footerModel:   sections.NewFooter(renderer, keys.GlobalKeys),
+		navModel:      sections.NewNav(termRenderer, pageModels),
+		footerModel:   sections.NewFooter(termRenderer, keys.GlobalKeys),
 		viewportModel: viewportModel,
 		pages:         pageModels,
 	}
@@ -114,7 +118,7 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, tea.Batch(cmds...)
 
-	case commands.PageNavigationMsg:
+	case commands.NavigatePageMsg:
 		if int(msg) >= 0 || int(msg) < len(m.pages) {
 			m.activePage = int(msg)
 			m.viewportModel.Width = m.width - navWidth

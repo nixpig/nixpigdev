@@ -18,6 +18,7 @@ import (
 	"github.com/charmbracelet/wish/bubbletea"
 	app "github.com/nixpig/nixpigdev/internal"
 	"github.com/nixpig/nixpigdev/pkg/logging"
+	"github.com/nixpig/nixpigdev/pkg/markdown"
 	"github.com/rs/zerolog"
 )
 
@@ -107,7 +108,7 @@ func main() {
 }
 
 func teaHandler(sess ssh.Session) (tea.Model, []tea.ProgramOption) {
-	renderer := bubbletea.MakeRenderer(sess)
+	termRenderer := bubbletea.MakeRenderer(sess)
 
 	pty, _, active := sess.Pty()
 	if !active {
@@ -115,8 +116,12 @@ func teaHandler(sess ssh.Session) (tea.Model, []tea.ProgramOption) {
 
 	}
 
-	return app.New(pty, renderer), []tea.ProgramOption{
-		tea.WithAltScreen(),
-		tea.WithMouseCellMotion(),
-	}
+	return app.New(
+			pty,
+			termRenderer,
+			markdown.Render,
+		), []tea.ProgramOption{
+			tea.WithAltScreen(),
+			tea.WithMouseCellMotion(),
+		}
 }
