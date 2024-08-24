@@ -7,9 +7,9 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/nixpig/nixpigdev/app/commands"
-	"github.com/nixpig/nixpigdev/app/keys"
-	"github.com/nixpig/nixpigdev/app/theme"
+	"github.com/nixpig/nixpigdev/internal/commands"
+	"github.com/nixpig/nixpigdev/internal/keys"
+	"github.com/nixpig/nixpigdev/pkg/theme"
 )
 
 type navModel struct {

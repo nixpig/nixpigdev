@@ -2,10 +2,11 @@ package pages
 
 import (
 	"fmt"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/nixpig/nixpigdev/app/commands"
+	"github.com/nixpig/nixpigdev/internal/commands"
 )
 
 type projectsModel struct {
@@ -14,6 +15,7 @@ type projectsModel struct {
 	renderer     *lipgloss.Renderer
 	md           mdrenderer
 	contentWidth int
+	projects     commands.FetchProjectsSuccessMsg
 }
 
 func NewProjects(
@@ -25,11 +27,12 @@ func NewProjects(
 		description: "OSS + personal projects",
 		renderer:    renderer,
 		md:          md,
+		projects:    commands.FetchProjectsSuccessMsg{},
 	}
 }
 
 func (p projectsModel) Init() tea.Cmd {
-	return nil
+	return commands.FetchProjects()
 }
 
 func (p projectsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -37,34 +40,26 @@ func (p projectsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case commands.SectionSizeMsg:
 		p.contentWidth = msg.Width
 		return p, nil
+
+	case commands.FetchProjectsSuccessMsg:
+		p.projects = msg
 	}
 
 	return p, nil
 }
 
 func (p projectsModel) View() string {
-	return p.md(`
+	c := strings.Builder{}
+	c.WriteString(`
 # Projects
 
-## Personal projects
+## Personal projects`)
 
-[syringe.sh](https://github.com/nixpig/syringe.sh) • _Go_
+	for _, project := range p.projects {
+		c.WriteString(fmt.Sprintf("\n\n[%s](%s)\n\n%s\n\n---", project.Name, project.HTMLURL, project.Description))
+	}
 
-Self-hostable distributed database-per-user encrypted secrets management over SSH.
-
-[joubini](https://github.com/nixpig/joubini) • _Rust_
-
-Super-simple to configure HTTP/S reverse proxy for local dev; supports HTTP/1.1, HTTP/2, SSL (+ web sockets coming soon).
-
-[corkscrew](https://github.com/nixpig/corkscrew) • _Rust_
-
-Batch executor for HTTP requests configured in a simple YAML schema.
-
-
-## Open source
-
-		...
-			`, p.contentWidth)
+	return p.md(c.String(), p.contentWidth)
 }
 
 func (p projectsModel) Title() string {

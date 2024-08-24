@@ -5,7 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/nixpig/nixpigdev/app/commands"
+	"github.com/nixpig/nixpigdev/internal/commands"
 )
 
 type usesModel struct {

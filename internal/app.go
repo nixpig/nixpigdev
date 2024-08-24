@@ -1,4 +1,4 @@
-package app
+package internal
 
 import (
 	"fmt"
@@ -11,10 +11,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/ssh"
 	"github.com/joho/godotenv"
-	"github.com/nixpig/nixpigdev/app/commands"
-	"github.com/nixpig/nixpigdev/app/keys"
-	"github.com/nixpig/nixpigdev/app/pages"
-	"github.com/nixpig/nixpigdev/app/sections"
+	"github.com/nixpig/nixpigdev/internal/commands"
+	"github.com/nixpig/nixpigdev/internal/keys"
+	"github.com/nixpig/nixpigdev/internal/pages"
+	"github.com/nixpig/nixpigdev/internal/sections"
+	"github.com/nixpig/nixpigdev/pkg/markdown"
 )
 
 const (
@@ -41,12 +42,12 @@ type appModel struct {
 
 func New(pty ssh.Pty, renderer *lipgloss.Renderer) appModel {
 	pageModels := []tea.Model{
-		pages.NewHome(renderer, md),
-		pages.NewScrapbook(renderer, md),
-		pages.NewProjects(renderer, md),
-		pages.NewResume(renderer, md),
-		pages.NewUses(renderer, md),
-		pages.NewContact(renderer, md),
+		pages.NewHome(renderer, markdown.Render),
+		pages.NewScrapbook(renderer, markdown.Render),
+		pages.NewProjects(renderer, markdown.Render),
+		pages.NewResume(renderer, markdown.Render),
+		pages.NewUses(renderer, markdown.Render),
+		pages.NewContact(renderer, markdown.Render),
 	}
 
 	viewportModel := viewport.New(0, 0)
