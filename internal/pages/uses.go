@@ -6,25 +6,26 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nixpig/nixpigdev/internal/commands"
+	"github.com/nixpig/nixpigdev/pkg/markdown"
 )
 
 type usesModel struct {
 	title        string
 	description  string
-	renderer     *lipgloss.Renderer
-	md           mdrenderer
+	termRenderer *lipgloss.Renderer
+	mdRenderer   markdown.Renderer
 	contentWidth int
 }
 
 func NewUses(
-	renderer *lipgloss.Renderer,
-	md mdrenderer,
+	termRenderer *lipgloss.Renderer,
+	mdRenderer markdown.Renderer,
 ) usesModel {
 	return usesModel{
-		title:       "Uses",
-		description: "Tools of the trade",
-		renderer:    renderer,
-		md:          md,
+		title:        "Uses",
+		description:  "Tools of the trade",
+		termRenderer: termRenderer,
+		mdRenderer:   mdRenderer,
 	}
 }
 
@@ -43,7 +44,7 @@ func (u usesModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (u usesModel) View() string {
-	return u.md(`
+	return u.mdRenderer(`
 # Uses
 
 I'm a simple person, with simple needs. I spend most of my time in the terminal, and my setup is built around being able to work in that environment (somewhat) efficiently.
@@ -71,7 +72,7 @@ I'm a simple person, with simple needs. I spend most of my time in the terminal,
 - **Mouse:** The original [Mad Catz RAT 1](https://uk.webuy.com/product-detail?id=0728658050467C)
 - **Headset:** [JBL Quantum 810](https://uk.jbl.com/gaming-headsets/JBLQ810WLBLK.html)
 
-			`, u.contentWidth)
+`, u.contentWidth)
 }
 
 func (u usesModel) Title() string {

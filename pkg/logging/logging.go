@@ -18,7 +18,6 @@ func Middleware(logger *zerolog.Logger) func(next ssh.Handler) ssh.Handler {
 
 			next(sess)
 
-			// log end of connection
 			logger.Info().
 				Str("session", sess.Context().SessionID()).
 				Msg("disconnect")

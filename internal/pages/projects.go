@@ -7,27 +7,28 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nixpig/nixpigdev/internal/commands"
+	"github.com/nixpig/nixpigdev/pkg/markdown"
 )
 
 type projectsModel struct {
 	title        string
 	description  string
-	renderer     *lipgloss.Renderer
-	md           mdrenderer
+	termRenderer *lipgloss.Renderer
+	mdRenderer   markdown.Renderer
 	contentWidth int
 	projects     commands.FetchProjectsSuccessMsg
 }
 
 func NewProjects(
-	renderer *lipgloss.Renderer,
-	md mdrenderer,
+	termRenderer *lipgloss.Renderer,
+	mdRenderer markdown.Renderer,
 ) projectsModel {
 	return projectsModel{
-		title:       "Projects",
-		description: "OSS + personal projects",
-		renderer:    renderer,
-		md:          md,
-		projects:    commands.FetchProjectsSuccessMsg{},
+		title:        "Projects",
+		description:  "OSS + personal projects",
+		termRenderer: termRenderer,
+		mdRenderer:   mdRenderer,
+		projects:     commands.FetchProjectsSuccessMsg{},
 	}
 }
 
@@ -56,10 +57,15 @@ func (p projectsModel) View() string {
 ## Personal projects`)
 
 	for _, project := range p.projects {
-		c.WriteString(fmt.Sprintf("\n\n[%s](%s)\n\n%s\n\n---", project.Name, project.HTMLURL, project.Description))
+		c.WriteString(fmt.Sprintf(
+			"\n\n[%s](%s)\n\n%s\n\n---",
+			project.Name,
+			project.HTMLURL,
+			project.Description,
+		))
 	}
 
-	return p.md(c.String(), p.contentWidth)
+	return p.mdRenderer(c.String(), p.contentWidth)
 }
 
 func (p projectsModel) Title() string {

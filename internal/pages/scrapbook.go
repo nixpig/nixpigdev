@@ -3,46 +3,46 @@ package pages
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mmcdole/gofeed"
 	"github.com/nixpig/nixpigdev/internal/commands"
+	"github.com/nixpig/nixpigdev/pkg/markdown"
 	"github.com/nixpig/nixpigdev/pkg/theme"
 )
 
 type blogItem struct {
 	title string
 	link  string
-	date  time.Time
+	date  string
 }
 
 type scrapbookModel struct {
 	title        string
 	description  string
 	blogItems    []blogItem
-	renderer     *lipgloss.Renderer
-	md           mdrenderer
+	termRenderer *lipgloss.Renderer
+	mdRenderer   markdown.Renderer
 	contentWidth int
 }
 
 func NewScrapbook(
-	renderer *lipgloss.Renderer,
-	md mdrenderer,
+	termRenderer *lipgloss.Renderer,
+	mdRenderer markdown.Renderer,
 ) scrapbookModel {
 	return scrapbookModel{
-		title:       "Scrapbook",
-		description: "Notes, blogs, gists…",
-		renderer:    renderer,
-		md:          md,
+		title:        "Scrapbook",
+		description:  "Notes, blogs, gists…",
+		termRenderer: termRenderer,
+		mdRenderer:   mdRenderer,
 	}
 }
 
 func (s scrapbookModel) Init() tea.Cmd {
 	fp := gofeed.NewParser()
-	return commands.FetchFeed(fp)
+	return commands.FetchFeedCmd(fp)
 }
 
 func (s scrapbookModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -56,6 +56,7 @@ func (s scrapbookModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				s.blogItems = append(s.blogItems, blogItem{
 					title: item.Title,
 					link:  item.GUID,
+					date:  item.Published,
 				})
 			}
 		}
@@ -77,21 +78,26 @@ func (s scrapbookModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (s scrapbookModel) View() string {
 	tr, err := glamour.NewTermRenderer(
 		glamour.WithStylePath("dracula"),
-		glamour.WithWordWrap(s.contentWidth/2-2),
+		glamour.WithWordWrap(s.contentWidth-2),
 	)
 	if err != nil {
 		return fmt.Sprintf("Failed to create term renderer: %s", err)
 	}
 
-	container := s.renderer.NewStyle()
-	padded := s.renderer.NewStyle().
+	container := s.termRenderer.NewStyle()
+	padded := s.termRenderer.NewStyle().
 		PaddingLeft(2).
 		PaddingRight(2)
 
 	blogs := strings.Builder{}
 
 	for _, item := range s.blogItems {
-		blogs.WriteString(fmt.Sprintf("- [%s](%s)", item.title, item.link))
+		blogs.WriteString(fmt.Sprintf(
+			"- 🗓 %s \n   [%s](%s)",
+			item.date,
+			item.title,
+			item.link,
+		))
 	}
 
 	b, err := tr.Render(fmt.Sprintf("## Recent blogs\n%s", blogs.String()))
@@ -102,8 +108,10 @@ func (s scrapbookModel) View() string {
 	row := container.Render(b)
 
 	return strings.Join([]string{
-		s.md("# Scrapbook", s.contentWidth),
-		padded.Foreground(lipgloss.Color(theme.Dracula.Foreground)).Render("Just some stuff...\n"),
+		s.mdRenderer("# Scrapbook", s.contentWidth),
+		padded.
+			Foreground(lipgloss.Color(theme.Dracula.Foreground)).
+			Render("Just some stuff...\n"),
 		row,
 	}, "")
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nixpig/nixpigdev/internal/commands"
 	"github.com/nixpig/nixpigdev/internal/keys"
+	"github.com/nixpig/nixpigdev/pkg/markdown"
 	"github.com/nixpig/nixpigdev/pkg/theme"
 )
 
@@ -22,21 +23,21 @@ type contactModel struct {
 	title        string
 	description  string
 	formModel    tea.Model
-	renderer     *lipgloss.Renderer
-	md           mdrenderer
+	termRenderer *lipgloss.Renderer
+	mdRenderer   markdown.Renderer
 	contentWidth int
 }
 
 func NewContact(
-	renderer *lipgloss.Renderer,
-	md mdrenderer,
+	termRenderer *lipgloss.Renderer,
+	mdRenderer markdown.Renderer,
 ) contactModel {
 	return contactModel{
-		title:       "Contact",
-		description: "Come say hi!",
-		formModel:   NewForm(renderer),
-		renderer:    renderer,
-		md:          md,
+		title:        "Contact",
+		description:  "Come say hi!",
+		formModel:    NewForm(termRenderer),
+		termRenderer: termRenderer,
+		mdRenderer:   mdRenderer,
 	}
 }
 
@@ -61,7 +62,7 @@ func (c contactModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (c contactModel) View() string {
 	return strings.Join([]string{
-		c.md(`
+		c.mdRenderer(`
 # Contact
 
 Feel free to reach out and say "Hi!"
@@ -99,10 +100,10 @@ type form struct {
 	validationErrors []string
 	sending          bool
 	spinner          spinner.Model
-	renderer         *lipgloss.Renderer
+	termRenderer     *lipgloss.Renderer
 }
 
-func NewForm(renderer *lipgloss.Renderer) form {
+func NewForm(termRenderer *lipgloss.Renderer) form {
 	helpModel := help.New()
 	helpModel.ShortSeparator = " • "
 	helpModel.Styles.ShortKey = lipgloss.NewStyle().Bold(true)
@@ -130,11 +131,11 @@ func NewForm(renderer *lipgloss.Renderer) form {
 			email:   emailInput,
 			message: messageInput,
 		},
-		helpKeyMap: keys.FormKeys,
-		helpModel:  helpModel,
-		sending:    false,
-		spinner:    newSpinner(),
-		renderer:   renderer,
+		helpKeyMap:   keys.FormKeys,
+		helpModel:    helpModel,
+		sending:      false,
+		spinner:      newSpinner(),
+		termRenderer: termRenderer,
 	}
 
 	return m
@@ -163,6 +164,7 @@ func (m form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.validationErrors = []string{}
 		m.sending = false
 		m.spinner = newSpinner()
+		// TODO: show a success message?
 
 	case commands.SendEmailErrMsg:
 		m.validationErrors = append(m.validationErrors, msg.Error())
@@ -177,6 +179,7 @@ func (m form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.sending {
 			return m, nil
 		}
+
 		switch {
 		case key.Matches(msg, keys.FormKeys.Next):
 			if m.focusIndex == 3 {
@@ -184,21 +187,25 @@ func (m form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.focusIndex++
 			}
+
 		case key.Matches(msg, keys.FormKeys.Enter):
 			if m.focusIndex == 3 {
 				m.validationErrors = []string{}
+
 				if len(m.inputs.name.Value()) == 0 {
 					m.validationErrors = append(
 						m.validationErrors,
 						"name: no name provided",
 					)
 				}
+
 				if _, err := mail.ParseAddress(m.inputs.email.Value()); err != nil {
 					m.validationErrors = append(
 						m.validationErrors,
 						err.Error(),
 					)
 				}
+
 				if len(m.inputs.message.Value()) == 0 {
 					m.validationErrors = append(
 						m.validationErrors,
@@ -207,7 +214,7 @@ func (m form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				if len(m.validationErrors) == 0 {
-					cmd = commands.SendEmail(
+					cmd = commands.SendEmailCmd(
 						m.inputs.name.Value(),
 						m.inputs.email.Value(),
 						m.inputs.message.Value(),
@@ -249,15 +256,15 @@ func (m *form) updateInputs(msg tea.Msg) tea.Cmd {
 }
 
 func (m form) View() string {
-	focusedStyle := m.renderer.
+	focusedStyle := m.termRenderer.
 		NewStyle().
 		Foreground(lipgloss.Color(theme.Dracula.Pink))
 
-	blurredStyle := m.renderer.
+	blurredStyle := m.termRenderer.
 		NewStyle().
 		Foreground(lipgloss.Color(theme.Dracula.Faint))
 
-	noStyle := m.renderer.
+	noStyle := m.termRenderer.
 		NewStyle().
 		Foreground(lipgloss.Color(theme.Dracula.Foreground))
 
@@ -302,7 +309,7 @@ func (m form) View() string {
 	if len(m.validationErrors) > 0 {
 		for _, e := range m.validationErrors {
 			b.WriteString(
-				m.renderer.
+				m.termRenderer.
 					NewStyle().
 					Foreground(lipgloss.Color(theme.Dracula.Red)).
 					Render(fmt.Sprintf("\n⚠ %s", e)),
@@ -313,17 +320,20 @@ func (m form) View() string {
 	}
 
 	button := &blurredButton
+
 	if m.focusIndex == 3 {
 		button = &focusedButton
 	}
+
 	if m.sending {
-		sending := fmt.Sprintf(
+		sendingButton := fmt.Sprintf(
 			"%s %s %s",
 			blurredStyle.Render("["),
 			focusedStyle.Render(m.spinner.View()),
 			blurredStyle.Render("]"),
 		)
-		button = &sending
+
+		button = &sendingButton
 	}
 
 	b.WriteString(fmt.Sprintf(
@@ -332,7 +342,7 @@ func (m form) View() string {
 		m.helpModel.View(m.helpKeyMap),
 	))
 
-	return m.renderer.NewStyle().
+	return m.termRenderer.NewStyle().
 		PaddingLeft(2).
 		PaddingRight(2).
 		Render(b.String())
