@@ -2,6 +2,8 @@ ARG GO_VERSION=1
 
 FROM golang:${GO_VERSION}-alpine as builder
 
+RUN apk update && apk upgrade && apk add --no-cache make
+
 WORKDIR /usr/src/app
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
